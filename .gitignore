@@ -9,3 +9,7 @@ package-lock.json
 *_templ.go
 .models
 secp256k1-master
+
+# Development files
+.clinerules/
+docs/
