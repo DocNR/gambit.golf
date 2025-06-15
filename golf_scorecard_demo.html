@@ -1,0 +1,217 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Golf Scorecard Demo</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+</head>
+<body class="bg-gray-100 p-8">
+    <div class="max-w-6xl mx-auto p-6">
+        <!-- Traditional Golf Scorecard -->
+        <div class="bg-white border-2 border-gray-800 rounded-lg shadow-xl overflow-hidden">
+            <!-- Scorecard Header -->
+            <div class="bg-gray-100 border-b-2 border-gray-800 p-4">
+                <div class="flex flex-col md:flex-row md:items-center md:justify-between">
+                    <div class="mb-4 md:mb-0">
+                        <h1 class="text-2xl md:text-3xl font-bold text-gray-900 uppercase tracking-wide">
+                            🏌️ Golf Round
+                        </h1>
+                        <div class="text-lg font-semibold text-gray-700 mt-1">
+                            Bethpage Black Course
+                        </div>
+                        <div class="text-sm text-gray-600 mt-1">
+                            Course ID: bethpage-black-001
+                        </div>
+                    </div>
+                    <div class="text-center md:text-right">
+                        <div class="text-4xl md:text-5xl font-bold font-mono">
+                            <span class="text-green-600">71</span>
+                        </div>
+                        <div class="text-lg font-semibold">
+                            <span class="text-green-600">-1</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Player and Round Information -->
+            <div class="bg-gray-50 border-b border-gray-400 p-4">
+                <div class="grid grid-cols-1 md:grid-cols-4 gap-4 text-sm">
+                    <div>
+                        <span class="font-semibold text-gray-700">Player:</span>
+                        <span class="ml-2 text-gray-900">Walter Sobchak</span>
+                    </div>
+                    <div>
+                        <span class="font-semibold text-gray-700">📅 Date:</span>
+                        <span class="ml-2 text-gray-900">2025-06-14</span>
+                    </div>
+                    <div>
+                        <span class="font-semibold text-gray-700">🏌️ Tees:</span>
+                        <span class="ml-2 text-gray-900">Championship</span>
+                    </div>
+                    <div>
+                        <span class="font-semibold text-gray-700">⭐ Par:</span>
+                        <span class="ml-2 text-gray-900 font-mono">72</span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Traditional Scorecard Grid -->
+            <div class="p-4">
+                <h2 class="text-xl font-bold text-gray-900 mb-4 text-center uppercase tracking-wide">📊 Scorecard</h2>
+                
+                <!-- Front Nine -->
+                <div class="mb-6">
+                    <div class="overflow-x-auto">
+                        <table class="w-full border-collapse border-2 border-gray-800 bg-white">
+                            <thead>
+                                <tr class="bg-gray-200">
+                                    <th class="border border-gray-800 px-2 py-3 text-xs font-bold text-gray-900 uppercase tracking-wider">Hole</th>
+                                    <th class="border border-gray-800 px-2 py-3 text-sm font-bold text-gray-900 font-mono">1</th>
+                                    <th class="border border-gray-800 px-2 py-3 text-sm font-bold text-gray-900 font-mono">2</th>
+                                    <th class="border border-gray-800 px-2 py-3 text-sm font-bold text-gray-900 font-mono">3</th>
+                                    <th class="border border-gray-800 px-2 py-3 text-sm font-bold text-gray-900 font-mono">4</th>
+                                    <th class="border border-gray-800 px-2 py-3 text-sm font-bold text-gray-900 font-mono">5</th>
+                                    <th class="border border-gray-800 px-2 py-3 text-sm font-bold text-gray-900 font-mono">6</th>
+                                    <th class="border border-gray-800 px-2 py-3 text-sm font-bold text-gray-900 font-mono">7</th>
+                                    <th class="border border-gray-800 px-2 py-3 text-sm font-bold text-gray-900 font-mono">8</th>
+                                    <th class="border border-gray-800 px-2 py-3 text-sm font-bold text-gray-900 font-mono">9</th>
+                                    <th class="border border-gray-800 px-2 py-3 text-xs font-bold text-gray-900 bg-yellow-200 uppercase tracking-wider">Out</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <tr class="bg-white">
+                                    <td class="border border-gray-800 px-2 py-4 text-xs font-bold text-gray-900 bg-gray-100 uppercase tracking-wider">Score</td>
+                                    <td class="border border-gray-800 px-2 py-4 text-center">
+                                        <div class="text-lg font-bold font-mono text-gray-900">4</div>
+                                    </td>
+                                    <td class="border border-gray-800 px-2 py-4 text-center">
+                                        <div class="text-lg font-bold font-mono text-gray-900">4</div>
+                                    </td>
+                                    <td class="border border-gray-800 px-2 py-4 text-center">
+                                        <div class="text-lg font-bold font-mono text-gray-900">3</div>
+                                    </td>
+                                    <td class="border border-gray-800 px-2 py-4 text-center">
+                                        <div class="text-lg font-bold font-mono text-gray-900">5</div>
+                                    </td>
+                                    <td class="border border-gray-800 px-2 py-4 text-center">
+                                        <div class="text-lg font-bold font-mono text-gray-900">4</div>
+                                    </td>
+                                    <td class="border border-gray-800 px-2 py-4 text-center">
+                                        <div class="text-lg font-bold font-mono text-gray-900">4</div>
+                                    </td>
+                                    <td class="border border-gray-800 px-2 py-4 text-center">
+                                        <div class="text-lg font-bold font-mono text-gray-900">5</div>
+                                    </td>
+                                    <td class="border border-gray-800 px-2 py-4 text-center">
+                                        <div class="text-lg font-bold font-mono text-gray-900">3</div>
+                                    </td>
+                                    <td class="border border-gray-800 px-2 py-4 text-center">
+                                        <div class="text-lg font-bold font-mono text-gray-900">4</div>
+                                    </td>
+                                    <td class="border border-gray-800 px-2 py-4 text-center bg-yellow-200">
+                                        <div class="text-lg font-bold font-mono text-gray-900">36</div>
+                                    </td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+
+                <!-- Back Nine -->
+                <div class="mb-6">
+                    <div class="overflow-x-auto">
+                        <table class="w-full border-collapse border-2 border-gray-800 bg-white">
+                            <thead>
+                                <tr class="bg-gray-200">
+                                    <th class="border border-gray-800 px-2 py-3 text-xs font-bold text-gray-900 uppercase tracking-wider">Hole</th>
+                                    <th class="border border-gray-800 px-2 py-3 text-sm font-bold text-gray-900 font-mono">10</th>
+                                    <th class="border border-gray-800 px-2 py-3 text-sm font-bold text-gray-900 font-mono">11</th>
+                                    <th class="border border-gray-800 px-2 py-3 text-sm font-bold text-gray-900 font-mono">12</th>
+                                    <th class="border border-gray-800 px-2 py-3 text-sm font-bold text-gray-900 font-mono">13</th>
+                                    <th class="border border-gray-800 px-2 py-3 text-sm font-bold text-gray-900 font-mono">14</th>
+                                    <th class="border border-gray-800 px-2 py-3 text-sm font-bold text-gray-900 font-mono">15</th>
+                                    <th class="border border-gray-800 px-2 py-3 text-sm font-bold text-gray-900 font-mono">16</th>
+                                    <th class="border border-gray-800 px-2 py-3 text-sm font-bold text-gray-900 font-mono">17</th>
+                                    <th class="border border-gray-800 px-2 py-3 text-sm font-bold text-gray-900 font-mono">18</th>
+                                    <th class="border border-gray-800 px-2 py-3 text-xs font-bold text-gray-900 bg-yellow-200 uppercase tracking-wider">In</th>
+                                    <th class="border border-gray-800 px-2 py-3 text-xs font-bold text-gray-900 bg-green-200 uppercase tracking-wider">Total</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <tr class="bg-white">
+                                    <td class="border border-gray-800 px-2 py-4 text-xs font-bold text-gray-900 bg-gray-100 uppercase tracking-wider">Score</td>
+                                    <td class="border border-gray-800 px-2 py-4 text-center">
+                                        <div class="text-lg font-bold font-mono text-gray-900">4</div>
+                                    </td>
+                                    <td class="border border-gray-800 px-2 py-4 text-center">
+                                        <div class="text-lg font-bold font-mono text-gray-900">4</div>
+                                    </td>
+                                    <td class="border border-gray-800 px-2 py-4 text-center">
+                                        <div class="text-lg font-bold font-mono text-gray-900">4</div>
+                                    </td>
+                                    <td class="border border-gray-800 px-2 py-4 text-center">
+                                        <div class="text-lg font-bold font-mono text-gray-900">5</div>
+                                    </td>
+                                    <td class="border border-gray-800 px-2 py-4 text-center">
+                                        <div class="text-lg font-bold font-mono text-gray-900">3</div>
+                                    </td>
+                                    <td class="border border-gray-800 px-2 py-4 text-center">
+                                        <div class="text-lg font-bold font-mono text-gray-900">4</div>
+                                    </td>
+                                    <td class="border border-gray-800 px-2 py-4 text-center">
+                                        <div class="text-lg font-bold font-mono text-gray-900">4</div>
+                                    </td>
+                                    <td class="border border-gray-800 px-2 py-4 text-center">
+                                        <div class="text-lg font-bold font-mono text-gray-900">3</div>
+                                    </td>
+                                    <td class="border border-gray-800 px-2 py-4 text-center">
+                                        <div class="text-lg font-bold font-mono text-gray-900">4</div>
+                                    </td>
+                                    <td class="border border-gray-800 px-2 py-4 text-center bg-yellow-200">
+                                        <div class="text-lg font-bold font-mono text-gray-900">35</div>
+                                    </td>
+                                    <td class="border border-gray-800 px-2 py-4 text-center bg-green-200">
+                                        <div class="text-xl font-bold font-mono text-gray-900">71</div>
+                                    </td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Notes -->
+            <div class="border-t border-gray-400 p-4">
+                <h2 class="text-lg font-bold text-gray-900 mb-3 uppercase tracking-wide">📝 Notes</h2>
+                <div class="bg-gray-50 border border-gray-300 p-3 rounded">
+                    <p class="text-gray-700 text-sm">Great round today! The wind was challenging on the back nine, but managed to stay under par. The new driver is working well.</p>
+                </div>
+            </div>
+
+            <!-- Players -->
+            <div class="border-t border-gray-400 p-4">
+                <h2 class="text-lg font-bold text-gray-900 mb-3 uppercase tracking-wide">👥 Players</h2>
+                <div class="flex flex-wrap gap-2">
+                    <span class="bg-gray-200 text-gray-800 px-3 py-1 border border-gray-400 text-xs font-mono">walter123</span>
+                    <span class="bg-gray-200 text-gray-800 px-3 py-1 border border-gray-400 text-xs font-mono">donny456</span>
+                </div>
+            </div>
+        </div>
+
+        <!-- Mobile App Link -->
+        <div class="mt-6 p-4 bg-gradient-to-r from-green-50 to-blue-50 rounded-lg border border-green-200">
+            <div class="flex items-center justify-between">
+                <div>
+                    <h3 class="font-semibold text-gray-900">📱 Play Golf with NOGA</h3>
+                    <p class="text-sm text-gray-600 mt-1">Track your rounds and compete with friends</p>
+                </div>
+                <a href="#" class="bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded-lg text-sm font-medium transition-colors">
+                    Download App
+                </a>
+            </div>
+        </div>
+    </div>
+</body>
+</html>
