@@ -1,0 +1,611 @@
+package main
+
+import (
+	"strconv"
+)
+
+type GolfScorecardPageParams struct {
+	BaseEventPageParams
+	OpenGraphParams
+	HeadParams
+	Details     DetailsParams
+	GolfRound   Kind1501Metadata
+	Clients     []ClientReference
+}
+
+templ golfScorecardPageTemplate(params GolfScorecardPageParams, isEmbed bool) {
+	<!DOCTYPE html>
+	<html lang="en" class="h-full">
+		<head>
+			<meta charset="UTF-8"/>
+			<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+			<title>
+				if params.GolfRound.CourseName != "" {
+					Golf Round at { params.GolfRound.CourseName } - Score: { strconv.Itoa(params.GolfRound.TotalScore) }
+				} else {
+					Golf Round - Score: { strconv.Itoa(params.GolfRound.TotalScore) }
+				}
+			</title>
+			
+			<!-- OpenGraph Meta Tags -->
+			@openGraphTemplate(params.OpenGraphParams)
+			
+			<!-- Standard Meta Tags -->
+			<meta name="description" content={
+				func() string {
+					if params.GolfRound.CourseName != "" {
+						return "Golf scorecard for " + params.Event.author.Name + " at " + params.GolfRound.CourseName + ". Total score: " + strconv.Itoa(params.GolfRound.TotalScore)
+					} else {
+						return "Golf scorecard for " + params.Event.author.Name + ". Total score: " + strconv.Itoa(params.GolfRound.TotalScore)
+					}
+				}()
+			}/>
+			
+			<!-- Favicon -->
+			<link rel="icon" type="image/svg+xml" href="/static/favicon.svg"/>
+			
+			<!-- Embedded CSS for complete independence -->
+			<style>
+				/* Reset and base styles */
+				* {
+					margin: 0;
+					padding: 0;
+					box-sizing: border-box;
+				}
+				
+				html, body {
+					height: 100%;
+					font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+					line-height: 1.5;
+					color: #111827;
+					background-color: #f3f4f6;
+				}
+				
+				.container {
+					max-width: 1200px;
+					margin: 0 auto;
+					padding: 2rem;
+				}
+				
+				/* Scorecard container */
+				.scorecard {
+					background-color: white;
+					border: 2px solid #1f2937;
+					border-radius: 0.75rem;
+					box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25), 0 10px 25px -5px rgba(0, 0, 0, 0.1);
+					overflow: hidden;
+					margin: 0 auto;
+					max-width: 900px;
+				}
+				
+				/* Header section */
+				.scorecard-header {
+					background-color: #f3f4f6;
+					border-bottom: 2px solid #1f2937;
+					padding: 1rem;
+				}
+				
+				.header-content {
+					display: flex;
+					flex-direction: column;
+					gap: 1rem;
+				}
+				
+				.header-left h1 {
+					font-size: 1.5rem;
+					font-weight: bold;
+					color: #111827;
+					text-transform: uppercase;
+					letter-spacing: 0.05em;
+					margin-bottom: 0.25rem;
+				}
+				
+				.course-name {
+					font-size: 1.125rem;
+					font-weight: 600;
+					color: #374151;
+					margin-bottom: 0.25rem;
+				}
+				
+				.course-id {
+					font-size: 0.875rem;
+					color: #6b7280;
+				}
+				
+				.header-right {
+					text-align: center;
+				}
+				
+				.total-score {
+					font-size: 2.5rem;
+					font-weight: bold;
+					font-family: 'Courier New', monospace;
+					margin-bottom: 0.25rem;
+				}
+				
+				.score-to-par {
+					font-size: 1.125rem;
+					font-weight: 600;
+				}
+				
+				.score-under-par { color: #059669; }
+				.score-over-par { color: #dc2626; }
+				.score-even-par { color: #2563eb; }
+				
+				/* Player info section */
+				.player-info {
+					background-color: #f9fafb;
+					border-bottom: 1px solid #9ca3af;
+					padding: 1rem;
+				}
+				
+				.info-grid {
+					display: grid;
+					grid-template-columns: 1fr;
+					gap: 1rem;
+					font-size: 0.875rem;
+				}
+				
+				.info-item {
+					display: flex;
+					align-items: center;
+				}
+				
+				.info-label {
+					font-weight: 600;
+					color: #374151;
+				}
+				
+				.info-value {
+					margin-left: 0.5rem;
+					color: #111827;
+				}
+				
+				.info-value.mono {
+					font-family: 'Courier New', monospace;
+				}
+				
+				/* Scorecard grid */
+				.scorecard-content {
+					padding: 1rem;
+				}
+				
+				.scorecard-title {
+					font-size: 1.25rem;
+					font-weight: bold;
+					color: #111827;
+					text-align: center;
+					text-transform: uppercase;
+					letter-spacing: 0.05em;
+					margin-bottom: 1rem;
+				}
+				
+				.nine-section {
+					margin-bottom: 1.5rem;
+				}
+				
+				.scorecard-table {
+					width: 100%;
+					border-collapse: collapse;
+					border: 2px solid #1f2937;
+					background-color: white;
+					overflow-x: auto;
+					display: block;
+					white-space: nowrap;
+				}
+				
+				.scorecard-table thead,
+				.scorecard-table tbody {
+					display: table;
+					width: 100%;
+					table-layout: fixed;
+				}
+				
+				.scorecard-table th,
+				.scorecard-table td {
+					border: 1px solid #1f2937;
+					padding: 0.5rem 0.25rem;
+					text-align: center;
+					vertical-align: middle;
+				}
+				
+				.scorecard-table th {
+					background-color: #e5e7eb;
+					font-weight: bold;
+					color: #111827;
+					font-size: 0.75rem;
+					text-transform: uppercase;
+					letter-spacing: 0.025em;
+				}
+				
+				.scorecard-table th.hole-number {
+					font-size: 0.875rem;
+					font-family: 'Courier New', monospace;
+				}
+				
+				.scorecard-table td.row-label {
+					background-color: #f3f4f6;
+					font-weight: bold;
+					color: #111827;
+					font-size: 0.75rem;
+					text-transform: uppercase;
+					letter-spacing: 0.025em;
+				}
+				
+				.scorecard-table td.score-cell {
+					font-size: 1.125rem;
+					font-weight: bold;
+					font-family: 'Courier New', monospace;
+					color: #111827;
+				}
+				
+				.scorecard-table th.out-total {
+					background-color: #fef3c7;
+				}
+				
+				.scorecard-table td.out-total {
+					background-color: #fef3c7;
+					font-size: 1.125rem;
+					font-weight: bold;
+					font-family: 'Courier New', monospace;
+					color: #111827;
+				}
+				
+				.scorecard-table th.in-total {
+					background-color: #fef3c7;
+				}
+				
+				.scorecard-table td.in-total {
+					background-color: #fef3c7;
+					font-size: 1.125rem;
+					font-weight: bold;
+					font-family: 'Courier New', monospace;
+					color: #111827;
+				}
+				
+				.scorecard-table th.grand-total {
+					background-color: #dcfce7;
+				}
+				
+				.scorecard-table td.grand-total {
+					background-color: #dcfce7;
+					font-size: 1.25rem;
+					font-weight: bold;
+					font-family: 'Courier New', monospace;
+					color: #111827;
+				}
+				
+				/* Notes section */
+				.notes-section {
+					border-top: 1px solid #9ca3af;
+					padding: 1rem;
+				}
+				
+				.section-title {
+					font-size: 1.125rem;
+					font-weight: bold;
+					color: #111827;
+					text-transform: uppercase;
+					letter-spacing: 0.05em;
+					margin-bottom: 0.75rem;
+				}
+				
+				.notes-content {
+					background-color: #f9fafb;
+					border: 1px solid #d1d5db;
+					border-radius: 0.25rem;
+					padding: 0.75rem;
+				}
+				
+				.notes-text {
+					color: #374151;
+					font-size: 0.875rem;
+					white-space: pre-wrap;
+				}
+				
+				/* Players section */
+				.players-section {
+					border-top: 1px solid #9ca3af;
+					padding: 1rem;
+				}
+				
+				.players-list {
+					display: flex;
+					flex-wrap: wrap;
+					gap: 0.5rem;
+				}
+				
+				.player-tag {
+					background-color: #e5e7eb;
+					color: #1f2937;
+					padding: 0.25rem 0.75rem;
+					border: 1px solid #9ca3af;
+					font-size: 0.75rem;
+					font-family: 'Courier New', monospace;
+				}
+				
+				/* App link section */
+				.app-link {
+					margin-top: 1.5rem;
+					padding: 1rem;
+					background: linear-gradient(to right, #f0fdf4, #eff6ff);
+					border-radius: 0.5rem;
+					border: 1px solid #bbf7d0;
+				}
+				
+				.app-link-content {
+					display: flex;
+					align-items: center;
+					justify-content: space-between;
+					flex-direction: column;
+					gap: 1rem;
+				}
+				
+				.app-link h3 {
+					font-weight: 600;
+					color: #111827;
+				}
+				
+				.app-link p {
+					font-size: 0.875rem;
+					color: #6b7280;
+					margin-top: 0.25rem;
+				}
+				
+				.app-link a {
+					background-color: #059669;
+					color: white;
+					padding: 0.5rem 1rem;
+					border-radius: 0.5rem;
+					font-size: 0.875rem;
+					font-weight: 500;
+					text-decoration: none;
+					transition: background-color 0.2s;
+				}
+				
+				.app-link a:hover {
+					background-color: #047857;
+				}
+				
+				/* Responsive design */
+				@media (min-width: 768px) {
+					.container {
+						padding: 2rem;
+					}
+					
+					.header-content {
+						flex-direction: row;
+						align-items: center;
+						justify-content: space-between;
+					}
+					
+					.header-left h1 {
+						font-size: 1.875rem;
+					}
+					
+					.total-score {
+						font-size: 3rem;
+					}
+					
+					.info-grid {
+						grid-template-columns: repeat(4, 1fr);
+					}
+					
+					.scorecard-table {
+						display: table;
+						white-space: normal;
+					}
+					
+					.app-link-content {
+						flex-direction: row;
+					}
+				}
+				
+				@media (min-width: 1024px) {
+					.total-score {
+						font-size: 3.5rem;
+					}
+				}
+				
+				/* Print styles */
+				@media print {
+					body {
+						background-color: white;
+					}
+					
+					.container {
+						padding: 0;
+						max-width: none;
+					}
+					
+					.app-link {
+						display: none;
+					}
+					
+					.scorecard {
+						box-shadow: none;
+						border-radius: 0;
+					}
+				}
+			</style>
+		</head>
+		<body>
+			<div class="container">
+				<!-- Traditional Golf Scorecard -->
+				<div class="scorecard">
+					<!-- Scorecard Header -->
+					<div class="scorecard-header">
+						<div class="header-content">
+							<div class="header-left">
+								<h1>🏌️ Golf Round</h1>
+								<div class="course-name">
+									if params.GolfRound.CourseName != "" {
+										{ params.GolfRound.CourseName }
+									} else {
+										Golf Course
+									}
+								</div>
+							</div>
+							<div class="header-right">
+								<div class="total-score">
+									if params.GolfRound.ScoreToPar < 0 {
+										<span class="score-under-par">{ strconv.Itoa(params.GolfRound.TotalScore) }</span>
+									} else if params.GolfRound.ScoreToPar > 0 {
+										<span class="score-over-par">{ strconv.Itoa(params.GolfRound.TotalScore) }</span>
+									} else {
+										<span class="score-even-par">{ strconv.Itoa(params.GolfRound.TotalScore) }</span>
+									}
+								</div>
+								<div class="score-to-par">
+									if params.GolfRound.ScoreToPar > 0 {
+										<span class="score-over-par">+{ strconv.Itoa(params.GolfRound.ScoreToPar) }</span>
+									} else if params.GolfRound.ScoreToPar < 0 {
+										<span class="score-under-par">{ strconv.Itoa(params.GolfRound.ScoreToPar) }</span>
+									} else {
+										<span class="score-even-par">E</span>
+									}
+								</div>
+							</div>
+						</div>
+					</div>
+
+					<!-- Player and Round Information -->
+					<div class="player-info">
+						<div class="info-grid">
+							<div class="info-item">
+								<span class="info-label">Player:</span>
+								<span class="info-value">{ params.Event.author.Name }</span>
+							</div>
+							<div class="info-item">
+								<span class="info-label">📅 Date:</span>
+								<span class="info-value">
+									if params.GolfRound.Date != "" {
+										{ params.GolfRound.Date }
+									} else {
+										{ params.Event.CreatedAtStr() }
+									}
+								</span>
+							</div>
+							<div class="info-item">
+								<span class="info-label">🏌️ Tees:</span>
+								<span class="info-value">
+									if params.GolfRound.TeeSet != "" {
+										{ params.GolfRound.TeeSet }
+									} else {
+										Championship
+									}
+								</span>
+							</div>
+							<div class="info-item">
+								<span class="info-label">⭐ Par:</span>
+								<span class="info-value mono">{ strconv.Itoa(params.GolfRound.Par) }</span>
+							</div>
+						</div>
+					</div>
+
+					<!-- Traditional Scorecard Grid -->
+					if len(params.GolfRound.HoleScores) > 0 {
+						<div class="scorecard-content">
+							<h2 class="scorecard-title">📊 Scorecard</h2>
+							
+							<!-- Front Nine -->
+							<div class="nine-section">
+								<table class="scorecard-table">
+									<thead>
+										<tr>
+											<th>Hole</th>
+											for i := 1; i <= 9; i++ {
+												<th class="hole-number">{ strconv.Itoa(i) }</th>
+											}
+											<th class="out-total">Out</th>
+										</tr>
+									</thead>
+									<tbody>
+										<tr>
+											<td class="row-label">Score</td>
+											for i := 1; i <= 9; i++ {
+												<td class="score-cell">
+													{ getScoreForHole(params.GolfRound.HoleScores, i) }
+												</td>
+											}
+											<td class="out-total">
+												{ getFrontNineTotal(params.GolfRound.HoleScores) }
+											</td>
+										</tr>
+									</tbody>
+								</table>
+							</div>
+
+							<!-- Back Nine -->
+							<div class="nine-section">
+								<table class="scorecard-table">
+									<thead>
+										<tr>
+											<th>Hole</th>
+											for i := 10; i <= 18; i++ {
+												<th class="hole-number">{ strconv.Itoa(i) }</th>
+											}
+											<th class="in-total">In</th>
+											<th class="grand-total">Total</th>
+										</tr>
+									</thead>
+									<tbody>
+										<tr>
+											<td class="row-label">Score</td>
+											for i := 10; i <= 18; i++ {
+												<td class="score-cell">
+													{ getScoreForHole(params.GolfRound.HoleScores, i) }
+												</td>
+											}
+											<td class="in-total">
+												{ getBackNineTotal(params.GolfRound.HoleScores) }
+											</td>
+											<td class="grand-total">
+												{ strconv.Itoa(params.GolfRound.TotalScore) }
+											</td>
+										</tr>
+									</tbody>
+								</table>
+							</div>
+						</div>
+					}
+
+					<!-- Notes -->
+					if params.GolfRound.Notes != "" {
+						<div class="notes-section">
+							<h2 class="section-title">📝 Notes</h2>
+							<div class="notes-content">
+								<p class="notes-text">{ params.GolfRound.Notes }</p>
+							</div>
+						</div>
+					}
+
+					<!-- Players -->
+					if len(params.GolfRound.Players) > 0 {
+						<div class="players-section">
+							<h2 class="section-title">👥 Players</h2>
+							<div class="players-list">
+								for _, player := range params.GolfRound.Players {
+									<span class="player-tag">
+										{ shortenString(player, 8, 4) }
+									</span>
+								}
+							</div>
+						</div>
+					}
+				</div>
+
+				<!-- Mobile App Link -->
+				<div class="app-link">
+					<div class="app-link-content">
+						<div>
+							<h3>📱 Play Golf with NOGA</h3>
+							<p>Track your rounds and compete with friends</p>
+						</div>
+						<a href="#">Download App</a>
+					</div>
+				</div>
+			</div>
+		</body>
+	</html>
+}

@@ -25,6 +25,7 @@ const (
 	CalendarEvent
 	WikiEvent
 	Highlight
+	GolfRound
 	Other
 )
 
