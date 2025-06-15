@@ -606,6 +606,42 @@ func renderEvent(w http.ResponseWriter, r *http.Request) {
 
 		component = highlightTemplate(params, isEmbed)
 
+	case GolfRound:
+		// Generate custom golf scorecard image URL
+		golfImageURL := fmt.Sprintf("https://%s/njump/image/%s", host, code)
+		opengraph.BigImage = golfImageURL
+		
+		opengraph.Superscript = "Golf Round"
+		if data.Kind1501Metadata.CourseName != "" {
+			opengraph.Superscript = "Golf Round at " + data.Kind1501Metadata.CourseName
+		}
+		opengraph.Subscript = fmt.Sprintf("Score: %d by %s", data.Kind1501Metadata.TotalScore, data.event.author.ShortName())
+		if data.Kind1501Metadata.Date != "" {
+			opengraph.Text = fmt.Sprintf("Played on %s", data.Kind1501Metadata.Date)
+		}
+		if data.Kind1501Metadata.Notes != "" {
+			if opengraph.Text != "" {
+				opengraph.Text += " - " + data.Kind1501Metadata.Notes
+			} else {
+				opengraph.Text = data.Kind1501Metadata.Notes
+			}
+		}
+
+		params := GolfScorecardPageParams{
+			BaseEventPageParams: baseEventPageParams,
+			OpenGraphParams:     opengraph,
+			HeadParams: HeadParams{
+				IsProfile:   false,
+				NaddrNaked:  data.naddrNaked,
+				NeventNaked: data.neventNaked,
+			},
+			Details:   detailsData,
+			GolfRound: *data.Kind1501Metadata,
+			Clients:   generateClientList(data.event.Kind, data.nevent),
+		}
+
+		component = golfScorecardPageTemplate(params, isEmbed)
+
 	case Other:
 		detailsData.HideDetails = false // always open this since we know nothing else about the event
 

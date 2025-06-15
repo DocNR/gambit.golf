@@ -2,6 +2,7 @@ package main
 
 import (
 	"context"
+	"encoding/json"
 	"fmt"
 	"html"
 	"html/template"
@@ -40,6 +41,27 @@ type Data struct {
 	kind31922Or31923Metadata *Kind31922Or31923Metadata
 	Kind30818Metadata        Kind30818Metadata
 	Kind9802Metadata         Kind9802Metadata
+	Kind1501Metadata         *Kind1501Metadata
+}
+
+type Kind1501Metadata struct {
+	CourseName    string
+	CourseRef     string
+	Date          string
+	TeeSet        string
+	TotalScore    int
+	Par           int
+	ScoreToPar    int
+	HoleScores    []HoleScore
+	Players       []string
+	Notes         string
+}
+
+type HoleScore struct {
+	Hole   int
+	Score  int
+	Par    int
+	Strokes int
 }
 
 func grabData(ctx context.Context, code string, withRelays bool) (Data, error) {
@@ -132,6 +154,88 @@ func grabData(ctx context.Context, code string, withRelays bool) (Data, error) {
 			return ""
 		}()
 		data.content = event.Content
+	case 1501:
+		data.templateId = GolfRound
+		data.content = event.Content
+		
+		// Parse golf round metadata from NIP-101g tags
+		golfData := &Kind1501Metadata{}
+		
+		// Parse JSON content for course name and notes
+		if event.Content != "" {
+			var contentData map[string]interface{}
+			if err := json.Unmarshal([]byte(event.Content), &contentData); err == nil {
+				if course, ok := contentData["course"].(string); ok {
+					golfData.CourseName = course
+				}
+				if notes, ok := contentData["notes"].(string); ok {
+					golfData.Notes = notes
+				}
+			}
+		}
+		
+		// Parse course reference
+		if courseTag := event.Tags.Find("course"); courseTag != nil {
+			golfData.CourseRef = courseTag[1]
+			// If we don't have a course name from JSON, extract from course reference
+			if golfData.CourseName == "" {
+				// Format: 33501:pubkey:course_id
+				parts := strings.Split(courseTag[1], ":")
+				if len(parts) >= 3 {
+					golfData.CourseName = parts[2] // Use course ID as fallback
+				}
+			}
+		}
+		
+		// Parse date
+		if dateTag := event.Tags.Find("date"); dateTag != nil {
+			golfData.Date = dateTag[1]
+		}
+		
+		// Parse tee set
+		if teeTag := event.Tags.Find("tee"); teeTag != nil {
+			golfData.TeeSet = teeTag[1]
+		}
+		
+		// Parse total score
+		if totalTag := event.Tags.Find("total"); totalTag != nil {
+			if total, err := strconv.Atoi(totalTag[1]); err == nil {
+				golfData.TotalScore = total
+			}
+		}
+		
+		// Parse individual hole scores
+		var holeScores []HoleScore
+		for _, tag := range event.Tags {
+			if len(tag) >= 3 && tag[0] == "score" {
+				if hole, err := strconv.Atoi(tag[1]); err == nil {
+					if score, err := strconv.Atoi(tag[2]); err == nil {
+						holeScores = append(holeScores, HoleScore{
+							Hole:   hole,
+							Score:  score,
+							Strokes: score,
+						})
+					}
+				}
+			}
+		}
+		golfData.HoleScores = holeScores
+		
+		// Calculate par and score to par (assuming par 72 for now)
+		golfData.Par = 72
+		golfData.ScoreToPar = golfData.TotalScore - golfData.Par
+		
+		// Parse players (p tags)
+		var players []string
+		for _, tag := range event.Tags {
+			if len(tag) >= 2 && tag[0] == "p" {
+				players = append(players, tag[1])
+			}
+		}
+		golfData.Players = players
+		
+		data.Kind1501Metadata = golfData
+
 	case 9802:
 		data.templateId = Highlight
 		data.content = event.Content
