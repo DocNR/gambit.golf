@@ -155,7 +155,7 @@ func main() {
 	mux.HandleFunc("/embed/{code}", renderEmbedjs)
 	mux.HandleFunc("/about", renderAbout)
 	mux.HandleFunc("/{code}", renderEvent)
-	mux.HandleFunc("/{$}", renderHomepage)
+	mux.HandleFunc("/{$}", renderLanding)
 
 	corsH := cors.Default()
 	corsM := func(next http.HandlerFunc) http.HandlerFunc {

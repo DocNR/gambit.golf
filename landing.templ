@@ -1,0 +1,190 @@
+package main
+
+templ landingPageTemplate() {
+	<!DOCTYPE html>
+	<html lang="en" class="theme--dark">
+		<head>
+			<meta charset="UTF-8"/>
+			<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+			<title>RAID Golf — Proof of Play</title>
+			<meta name="description" content="Practice analytics. On-course scoring. Lightning settlements. Built on Nostr."/>
+			if tailwindDebugStuff != "" {
+				@templ.Raw(tailwindDebugStuff)
+			} else {
+				<link rel="stylesheet" type="text/css" href={ "/njump/static/tailwind-bundle.min.css?t=" + compileTimeTs }/>
+			}
+			<style>
+				@keyframes scatter-in {
+					from { opacity: 0; transform: scale(0.3); }
+					to   { opacity: 1; transform: scale(1); }
+				}
+				.dot-animate { animation: scatter-in 0.6s ease-out both; }
+			</style>
+		</head>
+		<body class="bg-gray-950 text-gray-100 font-sans antialiased">
+			<!-- HERO -->
+			<section class="relative min-h-screen flex items-center overflow-hidden">
+				<div class="mx-auto w-full max-w-6xl px-6 py-24 flex flex-col lg:flex-row items-center gap-16">
+					<!-- Copy -->
+					<div class="flex-1 max-w-xl">
+						<p class="uppercase tracking-widest text-sm text-emerald-400 font-semibold mb-6">Proof of Play.</p>
+						<h1 class="text-4xl sm:text-5xl md:text-6xl font-extrabold leading-tight mb-6">
+							Handicap is a number.<br/>
+							<span class="text-emerald-400">RAID</span> is your actual game.
+						</h1>
+						<p class="text-lg text-gray-400 mb-10 max-w-md">
+							Practice analytics. On-course scoring. Lightning settlements. Built on Nostr — owned by no one.
+						</p>
+						<a
+							href="#waitlist"
+							class="inline-block bg-emerald-500 hover:bg-emerald-400 text-gray-950 font-bold px-8 py-3 rounded-lg text-lg transition-colors"
+						>
+							Get Early Access
+						</a>
+					</div>
+					<!-- Shot-dispersion SVG -->
+					<div class="flex-1 flex justify-center w-full max-w-md">
+						<svg viewBox="0 0 300 300" class="w-full max-w-sm" aria-label="Shot dispersion scatter plot">
+							<!-- Faint grid -->
+							<line x1="150" y1="0" x2="150" y2="300" stroke="#1f2937" stroke-width="0.5"/>
+							<line x1="0" y1="150" x2="300" y2="150" stroke="#1f2937" stroke-width="0.5"/>
+							<circle cx="150" cy="150" r="40" fill="none" stroke="#1f2937" stroke-width="0.5"/>
+							<circle cx="150" cy="150" r="80" fill="none" stroke="#1f2937" stroke-width="0.5"/>
+							<circle cx="150" cy="150" r="120" fill="none" stroke="#1f2937" stroke-width="0.5"/>
+							<!-- Target center -->
+							<circle cx="150" cy="150" r="3" fill="#34d399" opacity="0.4"/>
+							<!-- Green dots (good shots, near center) -->
+							<circle cx="155" cy="143" r="3.5" fill="#34d399" class="dot-animate" style="animation-delay:0.1s"/>
+							<circle cx="142" cy="155" r="3" fill="#34d399" class="dot-animate" style="animation-delay:0.15s"/>
+							<circle cx="160" cy="148" r="3" fill="#34d399" class="dot-animate" style="animation-delay:0.2s"/>
+							<circle cx="148" cy="138" r="3.5" fill="#34d399" class="dot-animate" style="animation-delay:0.25s"/>
+							<circle cx="153" cy="162" r="3" fill="#34d399" class="dot-animate" style="animation-delay:0.3s"/>
+							<circle cx="138" cy="145" r="3" fill="#34d399" class="dot-animate" style="animation-delay:0.35s"/>
+							<circle cx="162" cy="155" r="3.5" fill="#34d399" class="dot-animate" style="animation-delay:0.4s"/>
+							<circle cx="145" cy="160" r="3" fill="#34d399" class="dot-animate" style="animation-delay:0.45s"/>
+							<circle cx="157" cy="135" r="3" fill="#34d399" class="dot-animate" style="animation-delay:0.5s"/>
+							<circle cx="140" cy="150" r="3.5" fill="#34d399" class="dot-animate" style="animation-delay:0.55s"/>
+							<circle cx="150" cy="142" r="3" fill="#34d399" class="dot-animate" style="animation-delay:0.6s"/>
+							<circle cx="165" cy="160" r="3" fill="#34d399" class="dot-animate" style="animation-delay:0.65s"/>
+							<!-- White dots (scattered wider) -->
+							<circle cx="175" cy="125" r="2.5" fill="#e5e7eb" class="dot-animate" style="animation-delay:0.3s"/>
+							<circle cx="120" cy="170" r="2.5" fill="#e5e7eb" class="dot-animate" style="animation-delay:0.35s"/>
+							<circle cx="185" cy="165" r="2" fill="#e5e7eb" class="dot-animate" style="animation-delay:0.4s"/>
+							<circle cx="130" cy="120" r="2.5" fill="#e5e7eb" class="dot-animate" style="animation-delay:0.45s"/>
+							<circle cx="170" cy="180" r="2" fill="#e5e7eb" class="dot-animate" style="animation-delay:0.5s"/>
+							<circle cx="115" cy="140" r="2.5" fill="#e5e7eb" class="dot-animate" style="animation-delay:0.55s"/>
+							<circle cx="180" cy="130" r="2" fill="#e5e7eb" class="dot-animate" style="animation-delay:0.6s"/>
+							<circle cx="125" cy="175" r="2.5" fill="#e5e7eb" class="dot-animate" style="animation-delay:0.65s"/>
+							<circle cx="190" cy="145" r="2" fill="#e5e7eb" class="dot-animate" style="animation-delay:0.7s"/>
+							<circle cx="110" cy="155" r="2.5" fill="#e5e7eb" class="dot-animate" style="animation-delay:0.75s"/>
+							<!-- Outliers -->
+							<circle cx="200" cy="100" r="2" fill="#e5e7eb" opacity="0.5" class="dot-animate" style="animation-delay:0.8s"/>
+							<circle cx="95" cy="195" r="2" fill="#e5e7eb" opacity="0.5" class="dot-animate" style="animation-delay:0.85s"/>
+							<circle cx="210" cy="175" r="1.5" fill="#e5e7eb" opacity="0.4" class="dot-animate" style="animation-delay:0.9s"/>
+							<circle cx="85" cy="115" r="1.5" fill="#e5e7eb" opacity="0.4" class="dot-animate" style="animation-delay:0.95s"/>
+						</svg>
+					</div>
+				</div>
+			</section>
+			<!-- THREE PILLARS -->
+			<section class="py-24 px-6">
+				<div class="mx-auto max-w-6xl grid grid-cols-1 md:grid-cols-3 gap-8">
+					<!-- Pillar 1: Practice -->
+					<div class="bg-gray-900 border border-gray-800 rounded-2xl p-8 flex flex-col items-start">
+						<!-- Bullseye SVG -->
+						<svg viewBox="0 0 48 48" class="w-12 h-12 mb-6" aria-hidden="true">
+							<circle cx="24" cy="24" r="22" fill="none" stroke="#34d399" stroke-width="1.5"/>
+							<circle cx="24" cy="24" r="15" fill="none" stroke="#34d399" stroke-width="1.5"/>
+							<circle cx="24" cy="24" r="8" fill="none" stroke="#34d399" stroke-width="1.5"/>
+							<circle cx="24" cy="24" r="2.5" fill="#34d399"/>
+						</svg>
+						<h3 class="text-xl font-bold mb-3">Practice That Means Something</h3>
+						<p class="text-gray-400 leading-relaxed">
+							Connect your launch monitor. See your real numbers. Know what you are working on and whether it is working.
+						</p>
+					</div>
+					<!-- Pillar 2: Scoring -->
+					<div class="bg-gray-900 border border-gray-800 rounded-2xl p-8 flex flex-col items-start">
+						<!-- Grid SVG -->
+						<svg viewBox="0 0 48 48" class="w-12 h-12 mb-6" aria-hidden="true">
+							<rect x="4" y="4" width="12" height="12" rx="2" fill="none" stroke="#34d399" stroke-width="1.5"/>
+							<rect x="18" y="4" width="12" height="12" rx="2" fill="none" stroke="#34d399" stroke-width="1.5"/>
+							<rect x="32" y="4" width="12" height="12" rx="2" fill="none" stroke="#34d399" stroke-width="1.5"/>
+							<rect x="4" y="18" width="12" height="12" rx="2" fill="none" stroke="#34d399" stroke-width="1.5"/>
+							<rect x="18" y="18" width="12" height="12" rx="2" fill="#34d399" opacity="0.3" stroke="#34d399" stroke-width="1.5"/>
+							<rect x="32" y="18" width="12" height="12" rx="2" fill="none" stroke="#34d399" stroke-width="1.5"/>
+							<rect x="4" y="32" width="12" height="12" rx="2" fill="none" stroke="#34d399" stroke-width="1.5"/>
+							<rect x="18" y="32" width="12" height="12" rx="2" fill="none" stroke="#34d399" stroke-width="1.5"/>
+							<rect x="32" y="32" width="12" height="12" rx="2" fill="none" stroke="#34d399" stroke-width="1.5"/>
+						</svg>
+						<h3 class="text-xl font-bold mb-3">Scoring That Keeps Up</h3>
+						<p class="text-gray-400 leading-relaxed">
+							Live multiplayer scoring across devices. See every shot as it happens, no refresh needed.
+						</p>
+					</div>
+					<!-- Pillar 3: Settle -->
+					<div class="bg-gray-900 border border-gray-800 rounded-2xl p-8 flex flex-col items-start">
+						<!-- Lightning bolt SVG -->
+						<svg viewBox="0 0 48 48" class="w-12 h-12 mb-6" aria-hidden="true">
+							<polygon points="28,2 12,26 22,26 18,46 36,20 26,20" fill="none" stroke="#34d399" stroke-width="1.5" stroke-linejoin="round"/>
+						</svg>
+						<h3 class="text-xl font-bold mb-3">Settle on the Spot</h3>
+						<p class="text-gray-400 leading-relaxed">
+							Side games with Lightning payments. The hole closes, the zap lands. Before you pull your tee out of the ground.
+						</p>
+					</div>
+				</div>
+			</section>
+			<!-- PROTOCOL SECTION -->
+			<section class="py-24 px-6">
+				<div class="mx-auto max-w-3xl text-center">
+					<h2 class="text-3xl sm:text-4xl font-extrabold mb-8">Your game. Your data. No platform owns it.</h2>
+					<p class="text-lg text-gray-400 leading-relaxed mb-6">
+						RAID is built on Nostr — an open protocol with no company in the middle. Your rounds, your stats, your social graph. Signed with your keys, verifiable by anyone, portable forever.
+					</p>
+					<p class="text-lg text-gray-400 leading-relaxed mb-8">
+						We are not building a platform. We are building a tool.
+					</p>
+					<p class="text-xl italic text-emerald-400 font-semibold">Golf. Signed. Verified.</p>
+				</div>
+			</section>
+			<!-- COMING SOON -->
+			<section id="waitlist" class="py-24 px-6 border-t border-gray-800">
+				<div class="mx-auto max-w-3xl text-center">
+					<h2 class="text-3xl sm:text-4xl font-extrabold mb-6">Launching at the Bitcoin Conference, Las Vegas — April 2026.</h2>
+					<p class="text-lg text-gray-400 mb-10">TestFlight access available for early testers.</p>
+					<a
+						href="https://njump.me/npub1PLACEHOLDER"
+						target="_blank"
+						rel="noopener noreferrer"
+						class="inline-block border-2 border-emerald-500 text-emerald-400 hover:bg-emerald-500 hover:text-gray-950 font-bold px-8 py-3 rounded-lg text-lg transition-colors"
+					>
+						Follow on Nostr
+					</a>
+				</div>
+			</section>
+			<!-- FOOTER -->
+			<footer class="py-12 px-6 border-t border-gray-800">
+				<div class="mx-auto max-w-6xl flex flex-col sm:flex-row items-center justify-between gap-6">
+					<span class="text-2xl font-extrabold tracking-wider">RAID</span>
+					<div class="flex items-center gap-6">
+						<a href="https://github.com/DocNR/gambit.golf" target="_blank" rel="noopener noreferrer" class="text-gray-500 hover:text-gray-300 transition-colors">
+							<!-- GitHub icon -->
+							<svg class="w-6 h-6" fill="currentColor" viewBox="0 0 24 24" aria-hidden="true">
+								<path fill-rule="evenodd" d="M12 2C6.477 2 2 6.484 2 12.017c0 4.425 2.865 8.18 6.839 9.504.5.092.682-.217.682-.483 0-.237-.008-.868-.013-1.703-2.782.605-3.369-1.343-3.369-1.343-.454-1.158-1.11-1.466-1.11-1.466-.908-.62.069-.608.069-.608 1.003.07 1.531 1.032 1.531 1.032.892 1.53 2.341 1.088 2.91.832.092-.647.35-1.088.636-1.338-2.22-.253-4.555-1.113-4.555-4.951 0-1.093.39-1.988 1.029-2.688-.103-.253-.446-1.272.098-2.65 0 0 .84-.27 2.75 1.026A9.564 9.564 0 0112 6.844c.85.004 1.705.115 2.504.337 1.909-1.296 2.747-1.027 2.747-1.027.546 1.379.202 2.398.1 2.651.64.7 1.028 1.595 1.028 2.688 0 3.848-2.339 4.695-4.566 4.943.359.309.678.92.678 1.855 0 1.338-.012 2.419-.012 2.747 0 .268.18.58.688.482A10.019 10.019 0 0022 12.017C22 6.484 17.522 2 12 2z" clip-rule="evenodd"/>
+							</svg>
+						</a>
+						<a href="https://njump.me/npub1PLACEHOLDER" target="_blank" rel="noopener noreferrer" class="text-gray-500 hover:text-gray-300 transition-colors">
+							<!-- Nostr / relay icon -->
+							<svg class="w-6 h-6" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24" aria-hidden="true">
+								<circle cx="12" cy="12" r="10"/>
+								<path d="M12 2a15.3 15.3 0 014 10 15.3 15.3 0 01-4 10 15.3 15.3 0 01-4-10 15.3 15.3 0 014-10z"/>
+								<line x1="2" y1="12" x2="22" y2="12"/>
+							</svg>
+						</a>
+					</div>
+				</div>
+			</footer>
+		</body>
+	</html>
+}
