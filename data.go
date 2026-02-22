@@ -42,6 +42,8 @@ type Data struct {
 	Kind30818Metadata        Kind30818Metadata
 	Kind9802Metadata         Kind9802Metadata
 	Kind1501Metadata         *Kind1501Metadata
+	Kind33501Metadata        *Kind33501Metadata
+	Kind30501Metadata        *Kind30501Metadata
 }
 
 type Kind1501Metadata struct {
@@ -58,10 +60,55 @@ type Kind1501Metadata struct {
 }
 
 type HoleScore struct {
-	Hole   int
-	Score  int
-	Par    int
+	Hole    int
+	Score   int
+	Par     int
 	Strokes int
+}
+
+type Kind33501Metadata struct {
+	DTag           string
+	Title          string
+	Location       string
+	Country        string
+	Website        string
+	Architect      string
+	Established    string
+	ImageURL       string
+	OperatorPubkey string
+	Holes          []Course33501Hole
+	Tees           []Course33501Tee
+	Yardages       []Course33501Yardage
+	TotalPar       int
+}
+
+type Course33501Hole struct {
+	Number   int
+	Par      int
+	Handicap int
+}
+
+type Course33501Tee struct {
+	Name   string
+	Rating float64
+	Slope  int
+}
+
+type Course33501Yardage struct {
+	Hole int
+	Tee  string
+	Yards int
+}
+
+type Kind30501Metadata struct {
+	DTag       string
+	CourseRef  string
+	Date       string
+	TeeSet     string
+	Status     string
+	Players    []string
+	HoleScores []HoleScore
+	TotalScore int
 }
 
 func grabData(ctx context.Context, code string, withRelays bool) (Data, error) {
@@ -235,6 +282,169 @@ func grabData(ctx context.Context, code string, withRelays bool) (Data, error) {
 		golfData.Players = players
 		
 		data.Kind1501Metadata = golfData
+
+	case 33501:
+		data.templateId = CourseData
+		data.content = event.Content
+
+		courseData := &Kind33501Metadata{}
+
+		// d tag
+		if dTag := event.Tags.Find("d"); dTag != nil {
+			courseData.DTag = dTag[1]
+		}
+
+		// title
+		if titleTag := event.Tags.Find("title"); titleTag != nil {
+			courseData.Title = titleTag[1]
+		}
+
+		// location
+		if locTag := event.Tags.Find("location"); locTag != nil {
+			courseData.Location = locTag[1]
+		}
+
+		// country
+		if countryTag := event.Tags.Find("country"); countryTag != nil {
+			courseData.Country = countryTag[1]
+		}
+
+		// website
+		if webTag := event.Tags.Find("website"); webTag != nil {
+			courseData.Website = webTag[1]
+		}
+
+		// architect
+		if archTag := event.Tags.Find("architect"); archTag != nil {
+			courseData.Architect = archTag[1]
+		}
+
+		// established
+		if estTag := event.Tags.Find("established"); estTag != nil {
+			courseData.Established = estTag[1]
+		}
+
+		// image (hero image)
+		if imgTag := event.Tags.Find("image"); imgTag != nil {
+			courseData.ImageURL = imgTag[1]
+		}
+
+		// operator pubkey from p tag with "operator" role
+		for _, tag := range event.Tags {
+			if len(tag) >= 4 && tag[0] == "p" && tag[3] == "operator" {
+				courseData.OperatorPubkey = tag[1]
+				break
+			}
+		}
+
+		// holes
+		for _, tag := range event.Tags {
+			if len(tag) >= 4 && tag[0] == "hole" {
+				num, _ := strconv.Atoi(tag[1])
+				par, _ := strconv.Atoi(tag[2])
+				hcp, _ := strconv.Atoi(tag[3])
+				courseData.Holes = append(courseData.Holes, Course33501Hole{
+					Number:   num,
+					Par:      par,
+					Handicap: hcp,
+				})
+			}
+		}
+
+		// tees
+		for _, tag := range event.Tags {
+			if len(tag) >= 4 && tag[0] == "tee" {
+				rating, _ := strconv.ParseFloat(tag[2], 64)
+				slope, _ := strconv.Atoi(tag[3])
+				courseData.Tees = append(courseData.Tees, Course33501Tee{
+					Name:   tag[1],
+					Rating: rating,
+					Slope:  slope,
+				})
+			}
+		}
+
+		// yardages
+		for _, tag := range event.Tags {
+			if len(tag) >= 4 && tag[0] == "yardage" {
+				hole, _ := strconv.Atoi(tag[1])
+				yards, _ := strconv.Atoi(tag[3])
+				courseData.Yardages = append(courseData.Yardages, Course33501Yardage{
+					Hole:  hole,
+					Tee:   tag[2],
+					Yards: yards,
+				})
+			}
+		}
+
+		// calculate total par
+		totalPar := 0
+		for _, h := range courseData.Holes {
+			totalPar += h.Par
+		}
+		courseData.TotalPar = totalPar
+
+		data.Kind33501Metadata = courseData
+
+	case 30501:
+		data.templateId = LiveScorecard
+		data.content = event.Content
+
+		liveData := &Kind30501Metadata{}
+
+		// d tag
+		if dTag := event.Tags.Find("d"); dTag != nil {
+			liveData.DTag = dTag[1]
+		}
+
+		// course reference
+		if courseTag := event.Tags.Find("course"); courseTag != nil {
+			liveData.CourseRef = courseTag[1]
+		}
+
+		// date
+		if dateTag := event.Tags.Find("date"); dateTag != nil {
+			liveData.Date = dateTag[1]
+		}
+
+		// tee set
+		if teeTag := event.Tags.Find("tee"); teeTag != nil {
+			liveData.TeeSet = teeTag[1]
+		}
+
+		// status
+		if statusTag := event.Tags.Find("status"); statusTag != nil {
+			liveData.Status = statusTag[1]
+		}
+
+		// players (p tags)
+		for _, tag := range event.Tags {
+			if len(tag) >= 2 && tag[0] == "p" {
+				liveData.Players = append(liveData.Players, tag[1])
+			}
+		}
+
+		// hole scores
+		for _, tag := range event.Tags {
+			if len(tag) >= 3 && tag[0] == "score" {
+				hole, _ := strconv.Atoi(tag[1])
+				score, _ := strconv.Atoi(tag[2])
+				liveData.HoleScores = append(liveData.HoleScores, HoleScore{
+					Hole:    hole,
+					Score:   score,
+					Strokes: score,
+				})
+			}
+		}
+
+		// calculate total score
+		total := 0
+		for _, hs := range liveData.HoleScores {
+			total += hs.Score
+		}
+		liveData.TotalScore = total
+
+		data.Kind30501Metadata = liveData
 
 	case 9802:
 		data.templateId = Highlight

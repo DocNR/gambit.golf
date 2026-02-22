@@ -26,6 +26,8 @@ const (
 	WikiEvent
 	Highlight
 	GolfRound
+	CourseData
+	LiveScorecard
 	Other
 )
 

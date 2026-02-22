@@ -1,0 +1,566 @@
+package main
+
+import (
+	"fmt"
+	"strconv"
+)
+
+type GolfCoursePageParams struct {
+	BaseEventPageParams
+	OpenGraphParams
+	HeadParams
+	Details DetailsParams
+	Course  Kind33501Metadata
+	Clients []ClientReference
+}
+
+func getTotalYardsForTee(yardages []Course33501Yardage, teeName string) int {
+	total := 0
+	for _, y := range yardages {
+		if y.Tee == teeName {
+			total += y.Yards
+		}
+	}
+	return total
+}
+
+func getYardageForHoleTee(yardages []Course33501Yardage, hole int, teeName string) string {
+	for _, y := range yardages {
+		if y.Hole == hole && y.Tee == teeName {
+			return strconv.Itoa(y.Yards)
+		}
+	}
+	return "-"
+}
+
+func getHolePar(holes []Course33501Hole, holeNum int) string {
+	for _, h := range holes {
+		if h.Number == holeNum {
+			return strconv.Itoa(h.Par)
+		}
+	}
+	return "-"
+}
+
+func getHoleHCP(holes []Course33501Hole, holeNum int) string {
+	for _, h := range holes {
+		if h.Number == holeNum {
+			return strconv.Itoa(h.Handicap)
+		}
+	}
+	return "-"
+}
+
+func getFrontNinePar(holes []Course33501Hole) int {
+	total := 0
+	for _, h := range holes {
+		if h.Number >= 1 && h.Number <= 9 {
+			total += h.Par
+		}
+	}
+	return total
+}
+
+func getBackNinePar(holes []Course33501Hole) int {
+	total := 0
+	for _, h := range holes {
+		if h.Number >= 10 && h.Number <= 18 {
+			total += h.Par
+		}
+	}
+	return total
+}
+
+func getFrontNineYards(yardages []Course33501Yardage, teeName string) int {
+	total := 0
+	for _, y := range yardages {
+		if y.Tee == teeName && y.Hole >= 1 && y.Hole <= 9 {
+			total += y.Yards
+		}
+	}
+	return total
+}
+
+func getBackNineYards(yardages []Course33501Yardage, teeName string) int {
+	total := 0
+	for _, y := range yardages {
+		if y.Tee == teeName && y.Hole >= 10 && y.Hole <= 18 {
+			total += y.Yards
+		}
+	}
+	return total
+}
+
+templ golfCoursePageTemplate(params GolfCoursePageParams, isEmbed bool) {
+	<!DOCTYPE html>
+	<html lang="en" class="h-full">
+		<head>
+			<meta charset="UTF-8"/>
+			<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+			<title>
+				if params.Course.Title != "" {
+					{ params.Course.Title } - Course Info
+				} else {
+					Golf Course - Fairway Intel
+				}
+			</title>
+			@openGraphTemplate(params.OpenGraphParams)
+			<meta name="description" content={
+				func() string {
+					desc := "Golf course information"
+					if params.Course.Title != "" {
+						desc = params.Course.Title
+					}
+					if params.Course.Location != "" {
+						desc += " - " + params.Course.Location
+					}
+					return desc
+				}()
+			}/>
+			<link rel="icon" type="image/svg+xml" href="/static/favicon.svg"/>
+			<style>
+				* {
+					margin: 0;
+					padding: 0;
+					box-sizing: border-box;
+				}
+				html, body {
+					height: 100%;
+					font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+					line-height: 1.5;
+					color: #111827;
+					background-color: #f3f4f6;
+				}
+				.container {
+					max-width: 1200px;
+					margin: 0 auto;
+					padding: 2rem;
+				}
+				.course-card {
+					background-color: white;
+					border: 2px solid #1f2937;
+					border-radius: 0.75rem;
+					box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25), 0 10px 25px -5px rgba(0, 0, 0, 0.1);
+					overflow: hidden;
+					margin: 0 auto;
+					max-width: 960px;
+				}
+				.hero-image {
+					width: 100%;
+					max-height: 400px;
+					object-fit: cover;
+					display: block;
+					border-bottom: 2px solid #1f2937;
+				}
+				.course-header {
+					background-color: #f3f4f6;
+					border-bottom: 2px solid #1f2937;
+					padding: 1.5rem;
+				}
+				.course-title {
+					font-size: 1.75rem;
+					font-weight: bold;
+					color: #111827;
+					text-transform: uppercase;
+					letter-spacing: 0.05em;
+					margin-bottom: 0.25rem;
+				}
+				.course-location {
+					font-size: 1.125rem;
+					color: #374151;
+					font-weight: 500;
+				}
+				.course-country {
+					font-size: 0.875rem;
+					color: #6b7280;
+					margin-top: 0.25rem;
+				}
+				.section-title {
+					font-size: 1.25rem;
+					font-weight: bold;
+					color: #111827;
+					text-transform: uppercase;
+					letter-spacing: 0.05em;
+					margin-bottom: 1rem;
+					padding-bottom: 0.5rem;
+					border-bottom: 1px solid #d1d5db;
+				}
+				.tee-section {
+					padding: 1.5rem;
+					border-bottom: 1px solid #9ca3af;
+				}
+				.tee-table {
+					width: 100%;
+					border-collapse: collapse;
+					border: 2px solid #1f2937;
+					background-color: white;
+				}
+				.tee-table th,
+				.tee-table td {
+					border: 1px solid #1f2937;
+					padding: 0.5rem 0.75rem;
+					text-align: center;
+					vertical-align: middle;
+				}
+				.tee-table th {
+					background-color: #e5e7eb;
+					font-weight: bold;
+					color: #111827;
+					font-size: 0.75rem;
+					text-transform: uppercase;
+					letter-spacing: 0.025em;
+				}
+				.tee-table td {
+					font-family: 'Courier New', monospace;
+					font-size: 0.875rem;
+					color: #111827;
+				}
+				.tee-table td.tee-name {
+					font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+					font-weight: 600;
+					text-align: left;
+				}
+				.hole-section {
+					padding: 1.5rem;
+					border-bottom: 1px solid #9ca3af;
+				}
+				.nine-section {
+					margin-bottom: 1.5rem;
+					overflow-x: auto;
+				}
+				.hole-table {
+					width: 100%;
+					border-collapse: collapse;
+					border: 2px solid #1f2937;
+					background-color: white;
+					display: block;
+					overflow-x: auto;
+					white-space: nowrap;
+				}
+				.hole-table thead,
+				.hole-table tbody {
+					display: table;
+					width: 100%;
+					table-layout: fixed;
+				}
+				.hole-table th,
+				.hole-table td {
+					border: 1px solid #1f2937;
+					padding: 0.5rem 0.25rem;
+					text-align: center;
+					vertical-align: middle;
+				}
+				.hole-table th {
+					background-color: #e5e7eb;
+					font-weight: bold;
+					color: #111827;
+					font-size: 0.75rem;
+					text-transform: uppercase;
+					letter-spacing: 0.025em;
+				}
+				.hole-table th.hole-number {
+					font-size: 0.875rem;
+					font-family: 'Courier New', monospace;
+				}
+				.hole-table td.row-label {
+					background-color: #f3f4f6;
+					font-weight: bold;
+					color: #111827;
+					font-size: 0.75rem;
+					text-transform: uppercase;
+					letter-spacing: 0.025em;
+				}
+				.hole-table td.data-cell {
+					font-family: 'Courier New', monospace;
+					font-size: 0.875rem;
+					color: #111827;
+				}
+				.hole-table th.out-total,
+				.hole-table td.out-total {
+					background-color: #fef3c7;
+					font-weight: bold;
+					font-family: 'Courier New', monospace;
+				}
+				.hole-table th.in-total,
+				.hole-table td.in-total {
+					background-color: #fef3c7;
+					font-weight: bold;
+					font-family: 'Courier New', monospace;
+				}
+				.hole-table th.grand-total,
+				.hole-table td.grand-total {
+					background-color: #dcfce7;
+					font-weight: bold;
+					font-family: 'Courier New', monospace;
+				}
+				.metadata-section {
+					padding: 1.5rem;
+				}
+				.meta-grid {
+					display: grid;
+					grid-template-columns: 1fr;
+					gap: 1rem;
+				}
+				.meta-item {
+					display: flex;
+					align-items: baseline;
+				}
+				.meta-label {
+					font-weight: 600;
+					color: #374151;
+					font-size: 0.875rem;
+					min-width: 100px;
+				}
+				.meta-value {
+					color: #111827;
+					font-size: 0.875rem;
+				}
+				.meta-value a {
+					color: #059669;
+					text-decoration: underline;
+				}
+				.meta-value a:hover {
+					color: #047857;
+				}
+				.app-link {
+					margin-top: 1.5rem;
+					padding: 1rem;
+					background: linear-gradient(to right, #f0fdf4, #eff6ff);
+					border-radius: 0.5rem;
+					border: 1px solid #bbf7d0;
+				}
+				.app-link-content {
+					display: flex;
+					align-items: center;
+					justify-content: space-between;
+					flex-direction: column;
+					gap: 1rem;
+				}
+				.app-link h3 {
+					font-weight: 600;
+					color: #111827;
+				}
+				.app-link p {
+					font-size: 0.875rem;
+					color: #6b7280;
+					margin-top: 0.25rem;
+				}
+				.app-link a {
+					background-color: #059669;
+					color: white;
+					padding: 0.5rem 1rem;
+					border-radius: 0.5rem;
+					font-size: 0.875rem;
+					font-weight: 500;
+					text-decoration: none;
+					transition: background-color 0.2s;
+				}
+				.app-link a:hover {
+					background-color: #047857;
+				}
+				@media (min-width: 768px) {
+					.course-title {
+						font-size: 2.25rem;
+					}
+					.meta-grid {
+						grid-template-columns: repeat(2, 1fr);
+					}
+					.hole-table {
+						display: table;
+						white-space: normal;
+					}
+					.app-link-content {
+						flex-direction: row;
+					}
+				}
+				@media print {
+					body {
+						background-color: white;
+					}
+					.container {
+						padding: 0;
+						max-width: none;
+					}
+					.app-link {
+						display: none;
+					}
+					.course-card {
+						box-shadow: none;
+						border-radius: 0;
+					}
+				}
+			</style>
+		</head>
+		<body>
+			<div class="container">
+				<div class="course-card">
+					if params.Course.ImageURL != "" {
+						<img class="hero-image" src={ params.Course.ImageURL } alt={ params.Course.Title }/>
+					}
+					<div class="course-header">
+						<h1 class="course-title">
+							if params.Course.Title != "" {
+								{ params.Course.Title }
+							} else {
+								Golf Course
+							}
+						</h1>
+						if params.Course.Location != "" {
+							<div class="course-location">{ params.Course.Location }</div>
+						}
+						if params.Course.Country != "" {
+							<div class="course-country">{ params.Course.Country }</div>
+						}
+					</div>
+					if len(params.Course.Tees) > 0 {
+						<div class="tee-section">
+							<h2 class="section-title">Tee Information</h2>
+							<table class="tee-table">
+								<thead>
+									<tr>
+										<th style="text-align:left;">Name</th>
+										<th>Rating</th>
+										<th>Slope</th>
+										<th>Total Yards</th>
+									</tr>
+								</thead>
+								<tbody>
+									for _, tee := range params.Course.Tees {
+										<tr>
+											<td class="tee-name">{ tee.Name }</td>
+											<td>{ fmt.Sprintf("%.1f", tee.Rating) }</td>
+											<td>{ strconv.Itoa(tee.Slope) }</td>
+											<td>{ strconv.Itoa(getTotalYardsForTee(params.Course.Yardages, tee.Name)) }</td>
+										</tr>
+									}
+								</tbody>
+							</table>
+						</div>
+					}
+					if len(params.Course.Holes) > 0 {
+						<div class="hole-section">
+							<h2 class="section-title">Hole-by-Hole</h2>
+							<!-- Front Nine -->
+							<div class="nine-section">
+								<table class="hole-table">
+									<thead>
+										<tr>
+											<th>Hole</th>
+											for i := 1; i <= 9; i++ {
+												<th class="hole-number">{ strconv.Itoa(i) }</th>
+											}
+											<th class="out-total">Out</th>
+										</tr>
+									</thead>
+									<tbody>
+										<tr>
+											<td class="row-label">Par</td>
+											for i := 1; i <= 9; i++ {
+												<td class="data-cell">{ getHolePar(params.Course.Holes, i) }</td>
+											}
+											<td class="out-total">{ strconv.Itoa(getFrontNinePar(params.Course.Holes)) }</td>
+										</tr>
+										<tr>
+											<td class="row-label">HCP</td>
+											for i := 1; i <= 9; i++ {
+												<td class="data-cell">{ getHoleHCP(params.Course.Holes, i) }</td>
+											}
+											<td class="out-total">-</td>
+										</tr>
+										for _, tee := range params.Course.Tees {
+											<tr>
+												<td class="row-label">{ tee.Name }</td>
+												for i := 1; i <= 9; i++ {
+													<td class="data-cell">{ getYardageForHoleTee(params.Course.Yardages, i, tee.Name) }</td>
+												}
+												<td class="out-total">{ strconv.Itoa(getFrontNineYards(params.Course.Yardages, tee.Name)) }</td>
+											</tr>
+										}
+									</tbody>
+								</table>
+							</div>
+							<!-- Back Nine -->
+							<div class="nine-section">
+								<table class="hole-table">
+									<thead>
+										<tr>
+											<th>Hole</th>
+											for i := 10; i <= 18; i++ {
+												<th class="hole-number">{ strconv.Itoa(i) }</th>
+											}
+											<th class="in-total">In</th>
+											<th class="grand-total">Total</th>
+										</tr>
+									</thead>
+									<tbody>
+										<tr>
+											<td class="row-label">Par</td>
+											for i := 10; i <= 18; i++ {
+												<td class="data-cell">{ getHolePar(params.Course.Holes, i) }</td>
+											}
+											<td class="in-total">{ strconv.Itoa(getBackNinePar(params.Course.Holes)) }</td>
+											<td class="grand-total">{ strconv.Itoa(params.Course.TotalPar) }</td>
+										</tr>
+										<tr>
+											<td class="row-label">HCP</td>
+											for i := 10; i <= 18; i++ {
+												<td class="data-cell">{ getHoleHCP(params.Course.Holes, i) }</td>
+											}
+											<td class="in-total">-</td>
+											<td class="grand-total">-</td>
+										</tr>
+										for _, tee := range params.Course.Tees {
+											<tr>
+												<td class="row-label">{ tee.Name }</td>
+												for i := 10; i <= 18; i++ {
+													<td class="data-cell">{ getYardageForHoleTee(params.Course.Yardages, i, tee.Name) }</td>
+												}
+												<td class="in-total">{ strconv.Itoa(getBackNineYards(params.Course.Yardages, tee.Name)) }</td>
+												<td class="grand-total">{ strconv.Itoa(getTotalYardsForTee(params.Course.Yardages, tee.Name)) }</td>
+											</tr>
+										}
+									</tbody>
+								</table>
+							</div>
+						</div>
+					}
+					if params.Course.Website != "" || params.Course.Architect != "" || params.Course.Established != "" {
+						<div class="metadata-section">
+							<h2 class="section-title">Course Details</h2>
+							<div class="meta-grid">
+								if params.Course.Website != "" {
+									<div class="meta-item">
+										<span class="meta-label">Website:</span>
+										<span class="meta-value"><a href={ templ.SafeURL(params.Course.Website) } target="_blank" rel="noopener noreferrer">{ params.Course.Website }</a></span>
+									</div>
+								}
+								if params.Course.Architect != "" {
+									<div class="meta-item">
+										<span class="meta-label">Architect:</span>
+										<span class="meta-value">{ params.Course.Architect }</span>
+									</div>
+								}
+								if params.Course.Established != "" {
+									<div class="meta-item">
+										<span class="meta-label">Established:</span>
+										<span class="meta-value">{ params.Course.Established }</span>
+									</div>
+								}
+							</div>
+						</div>
+					}
+				</div>
+				<!-- RAID Golf CTA -->
+				<div class="app-link">
+					<div class="app-link-content">
+						<div>
+							<h3>⛳ RAID Golf</h3>
+							<p>Track your rounds on the Nostr network</p>
+						</div>
+						<a href="#">Download App</a>
+					</div>
+				</div>
+			</div>
+		</body>
+	</html>
+}

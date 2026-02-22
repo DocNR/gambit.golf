@@ -1,0 +1,552 @@
+package main
+
+import (
+	"strconv"
+	"strings"
+)
+
+type GolfLiveScorecardPageParams struct {
+	BaseEventPageParams
+	OpenGraphParams
+	HeadParams
+	Details   DetailsParams
+	LiveRound Kind30501Metadata
+	Clients   []ClientReference
+}
+
+func parseCourseID(courseRef string) string {
+	// Format: "33501:pubkey:d-tag"
+	parts := strings.Split(courseRef, ":")
+	if len(parts) >= 3 {
+		return parts[2]
+	}
+	return courseRef
+}
+
+func shortenPubkey(pubkey string) string {
+	if len(pubkey) <= 16 {
+		return pubkey
+	}
+	return pubkey[:8] + "…" + pubkey[len(pubkey)-4:]
+}
+
+func getLiveScoreForHole(holeScores []HoleScore, hole int) string {
+	for _, s := range holeScores {
+		if s.Hole == hole {
+			return strconv.Itoa(s.Score)
+		}
+	}
+	return "-"
+}
+
+func getLiveFrontNineTotal(holeScores []HoleScore) string {
+	total := 0
+	count := 0
+	for _, s := range holeScores {
+		if s.Hole >= 1 && s.Hole <= 9 {
+			total += s.Score
+			count++
+		}
+	}
+	if count == 0 {
+		return "-"
+	}
+	return strconv.Itoa(total)
+}
+
+func getLiveBackNineTotal(holeScores []HoleScore) string {
+	total := 0
+	count := 0
+	for _, s := range holeScores {
+		if s.Hole >= 10 && s.Hole <= 18 {
+			total += s.Score
+			count++
+		}
+	}
+	if count == 0 {
+		return "-"
+	}
+	return strconv.Itoa(total)
+}
+
+templ golfLiveScorecardPageTemplate(params GolfLiveScorecardPageParams, isEmbed bool) {
+	<!DOCTYPE html>
+	<html lang="en" class="h-full">
+		<head>
+			<meta charset="UTF-8"/>
+			<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+			<title>
+				if params.LiveRound.Status == "active" {
+					Live Round - RAID Golf
+				} else {
+					Round Complete - RAID Golf
+				}
+			</title>
+			@openGraphTemplate(params.OpenGraphParams)
+			<meta name="description" content={
+				func() string {
+					desc := "Live golf scorecard"
+					if params.LiveRound.CourseRef != "" {
+						desc += " at " + parseCourseID(params.LiveRound.CourseRef)
+					}
+					return desc
+				}()
+			}/>
+			<link rel="icon" type="image/svg+xml" href="/static/favicon.svg"/>
+			<style>
+				* {
+					margin: 0;
+					padding: 0;
+					box-sizing: border-box;
+				}
+				html, body {
+					height: 100%;
+					font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+					line-height: 1.5;
+					color: #111827;
+					background-color: #f3f4f6;
+				}
+				.container {
+					max-width: 1200px;
+					margin: 0 auto;
+					padding: 2rem;
+				}
+				.scorecard {
+					background-color: white;
+					border: 2px solid #1f2937;
+					border-radius: 0.75rem;
+					box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25), 0 10px 25px -5px rgba(0, 0, 0, 0.1);
+					overflow: hidden;
+					margin: 0 auto;
+					max-width: 900px;
+				}
+				.scorecard-header {
+					background-color: #f3f4f6;
+					border-bottom: 2px solid #1f2937;
+					padding: 1rem 1.5rem;
+				}
+				.header-content {
+					display: flex;
+					flex-direction: column;
+					gap: 1rem;
+				}
+				.status-badge {
+					display: inline-flex;
+					align-items: center;
+					gap: 0.5rem;
+					padding: 0.375rem 0.75rem;
+					border-radius: 9999px;
+					font-size: 0.875rem;
+					font-weight: 700;
+					text-transform: uppercase;
+					letter-spacing: 0.05em;
+				}
+				.status-active {
+					background-color: #dcfce7;
+					color: #166534;
+					border: 1px solid #86efac;
+				}
+				.status-complete {
+					background-color: #e0f2fe;
+					color: #0c4a6e;
+					border: 1px solid #7dd3fc;
+				}
+				@keyframes pulse-dot {
+					0%, 100% { opacity: 1; }
+					50% { opacity: 0.3; }
+				}
+				.pulse-dot {
+					animation: pulse-dot 1.5s ease-in-out infinite;
+				}
+				.header-title {
+					font-size: 1.5rem;
+					font-weight: bold;
+					color: #111827;
+					text-transform: uppercase;
+					letter-spacing: 0.05em;
+				}
+				.header-right {
+					text-align: center;
+				}
+				.total-score {
+					font-size: 2.5rem;
+					font-weight: bold;
+					font-family: 'Courier New', monospace;
+				}
+				.score-under-par { color: #059669; }
+				.score-over-par { color: #dc2626; }
+				.score-even-par { color: #2563eb; }
+				.round-info {
+					background-color: #f9fafb;
+					border-bottom: 1px solid #9ca3af;
+					padding: 1rem 1.5rem;
+				}
+				.info-grid {
+					display: grid;
+					grid-template-columns: 1fr;
+					gap: 0.75rem;
+					font-size: 0.875rem;
+				}
+				.info-item {
+					display: flex;
+					align-items: center;
+				}
+				.info-label {
+					font-weight: 600;
+					color: #374151;
+					min-width: 80px;
+				}
+				.info-value {
+					margin-left: 0.5rem;
+					color: #111827;
+				}
+				.info-value.mono {
+					font-family: 'Courier New', monospace;
+				}
+				.players-section {
+					border-bottom: 1px solid #9ca3af;
+					padding: 1rem 1.5rem;
+				}
+				.section-label {
+					font-size: 0.875rem;
+					font-weight: 600;
+					color: #374151;
+					text-transform: uppercase;
+					letter-spacing: 0.05em;
+					margin-bottom: 0.5rem;
+				}
+				.players-list {
+					display: flex;
+					flex-wrap: wrap;
+					gap: 0.5rem;
+				}
+				.player-tag {
+					background-color: #e5e7eb;
+					color: #1f2937;
+					padding: 0.25rem 0.75rem;
+					border: 1px solid #9ca3af;
+					font-size: 0.75rem;
+					font-family: 'Courier New', monospace;
+					border-radius: 0.25rem;
+				}
+				.scorecard-content {
+					padding: 1rem 1.5rem;
+				}
+				.scorecard-title {
+					font-size: 1.25rem;
+					font-weight: bold;
+					color: #111827;
+					text-align: center;
+					text-transform: uppercase;
+					letter-spacing: 0.05em;
+					margin-bottom: 1rem;
+				}
+				.nine-section {
+					margin-bottom: 1.5rem;
+				}
+				.scorecard-table {
+					width: 100%;
+					border-collapse: collapse;
+					border: 2px solid #1f2937;
+					background-color: white;
+					overflow-x: auto;
+					display: block;
+					white-space: nowrap;
+				}
+				.scorecard-table thead,
+				.scorecard-table tbody {
+					display: table;
+					width: 100%;
+					table-layout: fixed;
+				}
+				.scorecard-table th,
+				.scorecard-table td {
+					border: 1px solid #1f2937;
+					padding: 0.5rem 0.25rem;
+					text-align: center;
+					vertical-align: middle;
+				}
+				.scorecard-table th {
+					background-color: #e5e7eb;
+					font-weight: bold;
+					color: #111827;
+					font-size: 0.75rem;
+					text-transform: uppercase;
+					letter-spacing: 0.025em;
+				}
+				.scorecard-table th.hole-number {
+					font-size: 0.875rem;
+					font-family: 'Courier New', monospace;
+				}
+				.scorecard-table td.row-label {
+					background-color: #f3f4f6;
+					font-weight: bold;
+					color: #111827;
+					font-size: 0.75rem;
+					text-transform: uppercase;
+					letter-spacing: 0.025em;
+				}
+				.scorecard-table td.score-cell {
+					font-size: 1.125rem;
+					font-weight: bold;
+					font-family: 'Courier New', monospace;
+					color: #111827;
+				}
+				.scorecard-table th.out-total {
+					background-color: #fef3c7;
+				}
+				.scorecard-table td.out-total {
+					background-color: #fef3c7;
+					font-size: 1.125rem;
+					font-weight: bold;
+					font-family: 'Courier New', monospace;
+					color: #111827;
+				}
+				.scorecard-table th.in-total {
+					background-color: #fef3c7;
+				}
+				.scorecard-table td.in-total {
+					background-color: #fef3c7;
+					font-size: 1.125rem;
+					font-weight: bold;
+					font-family: 'Courier New', monospace;
+					color: #111827;
+				}
+				.scorecard-table th.grand-total {
+					background-color: #dcfce7;
+				}
+				.scorecard-table td.grand-total {
+					background-color: #dcfce7;
+					font-size: 1.25rem;
+					font-weight: bold;
+					font-family: 'Courier New', monospace;
+					color: #111827;
+				}
+				.no-score {
+					color: #9ca3af;
+				}
+				.app-link {
+					margin-top: 1.5rem;
+					padding: 1rem;
+					background: linear-gradient(to right, #f0fdf4, #eff6ff);
+					border-radius: 0.5rem;
+					border: 1px solid #bbf7d0;
+				}
+				.app-link-content {
+					display: flex;
+					align-items: center;
+					justify-content: space-between;
+					flex-direction: column;
+					gap: 1rem;
+				}
+				.app-link h3 {
+					font-weight: 600;
+					color: #111827;
+				}
+				.app-link p {
+					font-size: 0.875rem;
+					color: #6b7280;
+					margin-top: 0.25rem;
+				}
+				.app-link a {
+					background-color: #059669;
+					color: white;
+					padding: 0.5rem 1rem;
+					border-radius: 0.5rem;
+					font-size: 0.875rem;
+					font-weight: 500;
+					text-decoration: none;
+					transition: background-color 0.2s;
+				}
+				.app-link a:hover {
+					background-color: #047857;
+				}
+				@media (min-width: 768px) {
+					.header-content {
+						flex-direction: row;
+						align-items: center;
+						justify-content: space-between;
+					}
+					.header-title {
+						font-size: 1.875rem;
+					}
+					.total-score {
+						font-size: 3rem;
+					}
+					.info-grid {
+						grid-template-columns: repeat(3, 1fr);
+					}
+					.scorecard-table {
+						display: table;
+						white-space: normal;
+					}
+					.app-link-content {
+						flex-direction: row;
+					}
+				}
+				@media print {
+					body {
+						background-color: white;
+					}
+					.container {
+						padding: 0;
+						max-width: none;
+					}
+					.app-link {
+						display: none;
+					}
+					.scorecard {
+						box-shadow: none;
+						border-radius: 0;
+					}
+				}
+			</style>
+		</head>
+		<body>
+			<div class="container">
+				<div class="scorecard">
+					<div class="scorecard-header">
+						<div class="header-content">
+							<div>
+								if params.LiveRound.Status == "active" {
+									<span class="status-badge status-active">
+										<span class="pulse-dot">🟢</span> LIVE ROUND
+									</span>
+								} else {
+									<span class="status-badge status-complete">
+										✅ ROUND COMPLETE
+									</span>
+								}
+								<h1 class="header-title" style="margin-top: 0.5rem;">Live Scorecard</h1>
+							</div>
+							<div class="header-right">
+								<div class="total-score">
+									if params.LiveRound.TotalScore > 0 {
+										<span>{ strconv.Itoa(params.LiveRound.TotalScore) }</span>
+									} else {
+										<span class="no-score">-</span>
+									}
+								</div>
+							</div>
+						</div>
+					</div>
+					<div class="round-info">
+						<div class="info-grid">
+							if params.LiveRound.CourseRef != "" {
+								<div class="info-item">
+									<span class="info-label">Course:</span>
+									<span class="info-value mono">{ parseCourseID(params.LiveRound.CourseRef) }</span>
+								</div>
+							}
+							if params.LiveRound.Date != "" {
+								<div class="info-item">
+									<span class="info-label">Date:</span>
+									<span class="info-value">{ params.LiveRound.Date }</span>
+								</div>
+							}
+							if params.LiveRound.TeeSet != "" {
+								<div class="info-item">
+									<span class="info-label">Tees:</span>
+									<span class="info-value">{ params.LiveRound.TeeSet }</span>
+								</div>
+							}
+						</div>
+					</div>
+					if len(params.LiveRound.Players) > 0 {
+						<div class="players-section">
+							<div class="section-label">Players</div>
+							<div class="players-list">
+								for _, player := range params.LiveRound.Players {
+									<span class="player-tag">{ shortenPubkey(player) }</span>
+								}
+							</div>
+						</div>
+					}
+					<div class="scorecard-content">
+						<h2 class="scorecard-title">Scorecard</h2>
+						<!-- Front Nine -->
+						<div class="nine-section">
+							<table class="scorecard-table">
+								<thead>
+									<tr>
+										<th>Hole</th>
+										for i := 1; i <= 9; i++ {
+											<th class="hole-number">{ strconv.Itoa(i) }</th>
+										}
+										<th class="out-total">Out</th>
+									</tr>
+								</thead>
+								<tbody>
+									<tr>
+										<td class="row-label">Score</td>
+										for i := 1; i <= 9; i++ {
+											<td class="score-cell">
+												if getLiveScoreForHole(params.LiveRound.HoleScores, i) == "-" {
+													<span class="no-score">-</span>
+												} else {
+													{ getLiveScoreForHole(params.LiveRound.HoleScores, i) }
+												}
+											</td>
+										}
+										<td class="out-total">
+											{ getLiveFrontNineTotal(params.LiveRound.HoleScores) }
+										</td>
+									</tr>
+								</tbody>
+							</table>
+						</div>
+						<!-- Back Nine -->
+						<div class="nine-section">
+							<table class="scorecard-table">
+								<thead>
+									<tr>
+										<th>Hole</th>
+										for i := 10; i <= 18; i++ {
+											<th class="hole-number">{ strconv.Itoa(i) }</th>
+										}
+										<th class="in-total">In</th>
+										<th class="grand-total">Total</th>
+									</tr>
+								</thead>
+								<tbody>
+									<tr>
+										<td class="row-label">Score</td>
+										for i := 10; i <= 18; i++ {
+											<td class="score-cell">
+												if getLiveScoreForHole(params.LiveRound.HoleScores, i) == "-" {
+													<span class="no-score">-</span>
+												} else {
+													{ getLiveScoreForHole(params.LiveRound.HoleScores, i) }
+												}
+											</td>
+										}
+										<td class="in-total">
+											{ getLiveBackNineTotal(params.LiveRound.HoleScores) }
+										</td>
+										<td class="grand-total">
+											if params.LiveRound.TotalScore > 0 {
+												{ strconv.Itoa(params.LiveRound.TotalScore) }
+											} else {
+												<span class="no-score">-</span>
+											}
+										</td>
+									</tr>
+								</tbody>
+							</table>
+						</div>
+					</div>
+				</div>
+				<!-- RAID Golf CTA -->
+				<div class="app-link">
+					<div class="app-link-content">
+						<div>
+							<h3>⛳ RAID Golf</h3>
+							<p>Track your rounds on the Nostr network</p>
+						</div>
+						<a href="#">Download App</a>
+					</div>
+				</div>
+			</div>
+		</body>
+	</html>
+}

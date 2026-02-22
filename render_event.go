@@ -642,6 +642,65 @@ func renderEvent(w http.ResponseWriter, r *http.Request) {
 
 		component = golfScorecardPageTemplate(params, isEmbed)
 
+	case CourseData:
+		if data.Kind33501Metadata != nil && data.Kind33501Metadata.ImageURL != "" {
+			opengraph.BigImage = data.Kind33501Metadata.ImageURL
+		}
+		opengraph.Superscript = "Course Data"
+		if data.Kind33501Metadata != nil && data.Kind33501Metadata.Title != "" {
+			opengraph.Superscript = data.Kind33501Metadata.Title
+		}
+		if data.Kind33501Metadata != nil && data.Kind33501Metadata.Location != "" {
+			opengraph.Subscript = data.Kind33501Metadata.Location
+		}
+		if data.Kind33501Metadata != nil {
+			opengraph.Text = fmt.Sprintf("%d holes, Par %d", len(data.Kind33501Metadata.Holes), data.Kind33501Metadata.TotalPar)
+		}
+
+		params := GolfCoursePageParams{
+			BaseEventPageParams: baseEventPageParams,
+			OpenGraphParams:     opengraph,
+			HeadParams: HeadParams{
+				IsProfile:   false,
+				NaddrNaked:  data.naddrNaked,
+				NeventNaked: data.neventNaked,
+			},
+			Details: detailsData,
+			Course:  *data.Kind33501Metadata,
+			Clients: generateClientList(data.event.Kind, data.naddr),
+		}
+
+		component = golfCoursePageTemplate(params, isEmbed)
+
+	case LiveScorecard:
+		opengraph.Superscript = "Live Scorecard"
+		if data.Kind30501Metadata != nil && data.Kind30501Metadata.Status == "active" {
+			opengraph.Superscript = "🟢 Live Round"
+		} else {
+			opengraph.Superscript = "✅ Round Complete"
+		}
+		if data.Kind30501Metadata != nil && data.Kind30501Metadata.TotalScore > 0 {
+			opengraph.Subscript = fmt.Sprintf("Score: %d", data.Kind30501Metadata.TotalScore)
+		}
+		if data.Kind30501Metadata != nil && data.Kind30501Metadata.Date != "" {
+			opengraph.Text = fmt.Sprintf("Played on %s", data.Kind30501Metadata.Date)
+		}
+
+		params := GolfLiveScorecardPageParams{
+			BaseEventPageParams: baseEventPageParams,
+			OpenGraphParams:     opengraph,
+			HeadParams: HeadParams{
+				IsProfile:   false,
+				NaddrNaked:  data.naddrNaked,
+				NeventNaked: data.neventNaked,
+			},
+			Details:   detailsData,
+			LiveRound: *data.Kind30501Metadata,
+			Clients:   generateClientList(data.event.Kind, data.naddr),
+		}
+
+		component = golfLiveScorecardPageTemplate(params, isEmbed)
+
 	case Other:
 		detailsData.HideDetails = false // always open this since we know nothing else about the event
 
