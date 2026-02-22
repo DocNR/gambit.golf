@@ -407,6 +407,34 @@ templ golfScorecardPageTemplate(params GolfScorecardPageParams, isEmbed bool) {
 					}
 				}
 				
+				/* Raw JSON toggle */
+				.raw-json-toggle {
+					margin-top: 1.5rem;
+					max-width: 900px;
+					margin-left: auto;
+					margin-right: auto;
+				}
+				.raw-json-toggle summary {
+					cursor: pointer;
+					font-size: 0.875rem;
+					color: #6b7280;
+					padding: 0.5rem;
+				}
+				.raw-json-toggle summary:hover {
+					color: #374151;
+				}
+				.raw-json-content {
+					background: #1f2937;
+					color: #e5e7eb;
+					padding: 1rem;
+					border-radius: 0.5rem;
+					overflow-x: auto;
+					font-size: 0.75rem;
+					white-space: pre-wrap;
+					word-break: break-all;
+					margin-top: 0.5rem;
+				}
+
 				/* Print styles */
 				@media print {
 					body {
@@ -437,7 +465,11 @@ templ golfScorecardPageTemplate(params GolfScorecardPageParams, isEmbed bool) {
 					<div class="scorecard-header">
 						<div class="header-content">
 							<div class="header-left">
+								if params.Event.Kind == 1502 {
+								<h1>🏆 Final Round</h1>
+							} else {
 								<h1>🏌️ Golf Round</h1>
+							}
 								<div class="course-name">
 									if params.GolfRound.CourseName != "" {
 										{ params.GolfRound.CourseName }
@@ -594,6 +626,12 @@ templ golfScorecardPageTemplate(params GolfScorecardPageParams, isEmbed bool) {
 						</div>
 					}
 				</div>
+
+				<!-- Raw Event JSON -->
+				<details class="raw-json-toggle">
+					<summary>View Raw Event JSON</summary>
+					<pre class="raw-json-content">@templ.Raw(string(params.Details.EventJSON))</pre>
+				</details>
 
 				<!-- Mobile App Link -->
 				<div class="app-link">

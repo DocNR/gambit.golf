@@ -201,7 +201,7 @@ func grabData(ctx context.Context, code string, withRelays bool) (Data, error) {
 			return ""
 		}()
 		data.content = event.Content
-	case 1501:
+	case 1501, 1502:
 		data.templateId = GolfRound
 		data.content = event.Content
 		

@@ -358,6 +358,32 @@ templ golfCoursePageTemplate(params GolfCoursePageParams, isEmbed bool) {
 				.app-link a:hover {
 					background-color: #047857;
 				}
+				.raw-json-toggle {
+					margin-top: 1.5rem;
+					max-width: 960px;
+					margin-left: auto;
+					margin-right: auto;
+				}
+				.raw-json-toggle summary {
+					cursor: pointer;
+					font-size: 0.875rem;
+					color: #6b7280;
+					padding: 0.5rem;
+				}
+				.raw-json-toggle summary:hover {
+					color: #374151;
+				}
+				.raw-json-content {
+					background: #1f2937;
+					color: #e5e7eb;
+					padding: 1rem;
+					border-radius: 0.5rem;
+					overflow-x: auto;
+					font-size: 0.75rem;
+					white-space: pre-wrap;
+					word-break: break-all;
+					margin-top: 0.5rem;
+				}
 				@media (min-width: 768px) {
 					.course-title {
 						font-size: 2.25rem;
@@ -550,6 +576,12 @@ templ golfCoursePageTemplate(params GolfCoursePageParams, isEmbed bool) {
 						</div>
 					}
 				</div>
+				<!-- Raw Event JSON -->
+				<details class="raw-json-toggle">
+					<summary>View Raw Event JSON</summary>
+					<pre class="raw-json-content">@templ.Raw(string(params.Details.EventJSON))</pre>
+				</details>
+
 				<!-- RAID Golf CTA -->
 				<div class="app-link">
 					<div class="app-link-content">
