@@ -8,6 +8,14 @@ templ landingPageTemplate() {
 			<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
 			<title>RAID Golf — Proof of Play</title>
 			<meta name="description" content="On-course scoring. Real money on the line. Your data, yours forever. No company in the middle."/>
+			<meta name="theme-color" content="#10b981"/>
+			<link rel="apple-touch-icon" sizes="180x180" href="/njump/static/favicon/raid/apple-touch-icon.png?v=1"/>
+			<link rel="icon" type="image/png" sizes="32x32" href="/njump/static/favicon/raid/favicon-32x32.png?v=1"/>
+			<link rel="icon" type="image/png" sizes="16x16" href="/njump/static/favicon/raid/favicon-16x16.png?v=1"/>
+			<link rel="shortcut icon" href="/njump/static/favicon/raid/favicon.ico?v=1"/>
+			<link rel="preconnect" href="https://fonts.googleapis.com"/>
+			<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin="anonymous"/>
+			<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Space+Mono:ital,wght@0,400;0,700;1,400&display=swap"/>
 			if tailwindDebugStuff != "" {
 				@templ.Raw(tailwindDebugStuff)
 			} else {
@@ -20,6 +28,10 @@ templ landingPageTemplate() {
 				}
 				.dot-animate { animation: scatter-in 0.6s ease-out both; animation-play-state: paused; }
 				.dot-animate.triggered { animation-play-state: running; }
+				h1, h2, h3, .font-mono-brand {
+					font-family: 'Space Mono', monospace;
+					letter-spacing: -0.02em;
+				}
 			</style>
 			<!-- Capture real NIP-07 extension before window.nostr.js can override it -->
 			<script>window._nip07 = window.nostr || null;</script>
@@ -246,7 +258,7 @@ templ landingPageTemplate() {
 			<!-- FOOTER -->
 			<footer class="py-12 px-6 border-t border-gray-800">
 				<div class="mx-auto max-w-6xl flex flex-col sm:flex-row items-center justify-between gap-6">
-					<span class="text-2xl font-extrabold tracking-wider">RAID</span>
+					<img src="/njump/static/logo-compact.png" alt="RAID Golf" class="h-10 w-auto opacity-90 hover:opacity-100 transition-opacity"/>
 					<div class="flex items-center gap-6">
 						<a href="https://github.com/DocNR/gambit.golf" target="_blank" rel="noopener noreferrer" class="text-gray-500 hover:text-gray-300 transition-colors">
 							<!-- GitHub icon -->
