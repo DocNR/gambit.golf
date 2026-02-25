@@ -21,6 +21,26 @@ templ landingPageTemplate() {
 				.dot-animate { animation: scatter-in 0.6s ease-out both; animation-play-state: paused; }
 				.dot-animate.triggered { animation-play-state: running; }
 			</style>
+			<!-- NIP-46 remote signer support (window.nostr.js) -->
+			<!-- Allows users without a browser extension to connect via bunker:// URI -->
+			<script>
+				window.wnjParams = {
+					accent: 'green',
+					startHidden: true,
+					compactMode: true,
+					nostrConnectRelays: [
+						'wss://relay.nsec.app',
+						'wss://nos.lol',
+						'wss://relay.primal.net'
+					],
+					appMetadata: {
+						name: 'RAID Golf',
+						url: 'https://raid.golf',
+						image: 'https://raid.golf/njump/static/favicon/event/apple-touch-icon.png'
+					}
+				}
+			</script>
+			<script src="https://cdn.jsdelivr.net/npm/window.nostr.js/dist/window.nostr.min.js"></script>
 		</head>
 		<body class="bg-gray-950 text-gray-100 font-sans antialiased">
 			<!-- HERO -->

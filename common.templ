@@ -37,6 +37,26 @@ templ headCommonTemplate(params HeadParams) {
 	<script type="text/hyperscript">
 on load get [navigator.userAgent.includes('Safari'), navigator.userAgent.includes('Chrome')] then if it[0] is true and it[1] is false add .safari to <body /> end
 	</script>
+	<!-- NIP-46 remote signer support (window.nostr.js) -->
+	<!-- Allows users without a browser extension to connect via bunker:// URI -->
+	<script>
+		window.wnjParams = {
+			accent: "green",
+			startHidden: true,
+			compactMode: true,
+			nostrConnectRelays: [
+				"wss://relay.nsec.app",
+				"wss://nos.lol",
+				"wss://relay.primal.net"
+			],
+			appMetadata: {
+				name: "RAID Golf",
+				url: "https://raid.golf",
+				image: "https://raid.golf/njump/static/favicon/event/apple-touch-icon.png"
+			}
+		}
+	</script>
+	<script src="https://cdn.jsdelivr.net/npm/window.nostr.js/dist/window.nostr.min.js"></script>
 }
 
 templ authorHeaderTemplate(metadata sdk.ProfileMetadata) {
