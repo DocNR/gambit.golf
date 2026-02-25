@@ -21,12 +21,12 @@ templ landingPageTemplate() {
 				.dot-animate { animation: scatter-in 0.6s ease-out both; animation-play-state: paused; }
 				.dot-animate.triggered { animation-play-state: running; }
 			</style>
-			<!-- NIP-46 remote signer support (window.nostr.js) -->
-			<!-- Allows users without a browser extension to connect via bunker:// URI -->
+			<!-- Capture real NIP-07 extension before window.nostr.js can override it -->
+			<script>window._nip07 = window.nostr || null;</script>
+			<!-- NIP-46 remote signer support (window.nostr.js) — fallback for users without an extension -->
 			<script>
 				window.wnjParams = {
 					accent: 'green',
-					startHidden: true,
 					compactMode: true,
 					nostrConnectRelays: [
 						'wss://relay.nsec.app',
@@ -176,43 +176,45 @@ templ landingPageTemplate() {
 			<!-- EARLY ACCESS -->
 			<section id="waitlist" class="py-24 px-6 border-t border-gray-800">
 				<div class="mx-auto max-w-xl text-center">
-					<h2 class="text-3xl sm:text-4xl font-extrabold mb-4">Get Early Access</h2>
-					<p class="text-lg text-gray-400 mb-10">Launching at the Bitcoin Conference, Las Vegas — April 2026. TestFlight spots are limited.</p>
+					<h2 class="text-3xl sm:text-4xl font-extrabold mb-4">Get iOS TestFlight Access</h2>
+					<p class="text-lg text-gray-400 mb-10">Launching at Bitcoin Conference Las Vegas — April 2026. Limited spots.</p>
 					<!-- TODO: replace action URL with your Formspree endpoint (formspree.io/new) -->
-					<form action="https://formspree.io/f/REPLACE_WITH_YOUR_ID" method="POST" class="flex flex-col gap-4 text-left">
+					<form id="waitlist-form" action="https://formspree.io/f/REPLACE_WITH_YOUR_ID" method="POST" class="flex flex-col gap-4 text-left" onsubmit="return validateWaitlist()">
+						<!-- Nostr path -->
 						<div>
-							<label class="block text-sm font-medium text-gray-400 mb-1">Email</label>
-							<input
-								type="email"
-								name="email"
-								placeholder="you@example.com"
-								class="w-full bg-gray-900 border border-gray-700 rounded-lg px-4 py-3 text-gray-100 placeholder-gray-600 focus:outline-none focus:border-emerald-500"
-							/>
-						</div>
-						<div>
-							<label class="block text-sm font-medium text-gray-400 mb-1">Nostr <span class="text-gray-600">(optional)</span></label>
 							<button
 								type="button"
 								id="nostr-connect-btn"
 								onclick="connectNostr()"
-								class="w-full flex items-center justify-center gap-2 bg-gray-800 hover:bg-gray-700 border border-gray-700 hover:border-emerald-500 text-gray-400 hover:text-emerald-400 font-medium px-4 py-3 rounded-lg transition-colors mb-2"
+								class="w-full flex items-center justify-center gap-2 bg-gray-800 hover:bg-gray-700 border border-gray-700 hover:border-emerald-500 text-gray-300 hover:text-emerald-400 font-semibold px-4 py-3 rounded-lg transition-colors"
 							>
 								<svg class="w-4 h-4 flex-shrink-0" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><path d="M12 2a15.3 15.3 0 014 10 15.3 15.3 0 01-4 10 15.3 15.3 0 01-4-10 15.3 15.3 0 014-10z"/><line x1="2" y1="12" x2="22" y2="12"/></svg>
 								<span id="nostr-btn-text">Connect with Nostr</span>
 							</button>
+							<input type="hidden" id="npub-input" name="npub"/>
+						</div>
+						<!-- Divider -->
+						<div class="flex items-center gap-3">
+							<div class="flex-1 border-t border-gray-800"></div>
+							<span class="text-sm text-gray-600">or</span>
+							<div class="flex-1 border-t border-gray-800"></div>
+						</div>
+						<!-- Email path -->
+						<div>
 							<input
-								type="text"
-								id="npub-input"
-								name="npub"
-								placeholder="npub1... (or connect above)"
+								type="email"
+								name="email"
+								id="email-input"
+								placeholder="your@email.com"
 								class="w-full bg-gray-900 border border-gray-700 rounded-lg px-4 py-3 text-gray-100 placeholder-gray-600 focus:outline-none focus:border-emerald-500"
 							/>
 						</div>
+						<p id="waitlist-error" class="text-red-400 text-sm hidden">Please connect with Nostr or enter an email address.</p>
 						<button
 							type="submit"
 							class="w-full bg-emerald-500 hover:bg-emerald-400 text-gray-950 font-bold px-8 py-3 rounded-lg text-lg transition-colors"
 						>
-							Request Access
+							Request TestFlight Access
 						</button>
 					</form>
 					<p class="mt-8 text-sm text-gray-600">
@@ -298,7 +300,9 @@ templ landingPageTemplate() {
 				var btn = document.getElementById('nostr-connect-btn');
 				var btnText = document.getElementById('nostr-btn-text');
 				var npubInput = document.getElementById('npub-input');
-				if (!window.nostr) {
+				// Prefer the real NIP-07 extension captured before window.nostr.js loaded
+				var signer = window._nip07 || window.nostr;
+				if (!signer) {
 					btnText.textContent = 'No extension found — install Alby or nos2x';
 					setTimeout(function() { btnText.textContent = 'Connect with Nostr'; }, 3000);
 					return;
@@ -306,10 +310,10 @@ templ landingPageTemplate() {
 				try {
 					btnText.textContent = 'Connecting...';
 					btn.disabled = true;
-					var pubkey = await window.nostr.getPublicKey();
+					var pubkey = await signer.getPublicKey();
 					var npub = hexToNpub(pubkey);
 					npubInput.value = npub;
-					btn.classList.remove('bg-gray-800','hover:bg-gray-700','border-gray-700','hover:border-emerald-500','text-gray-400','hover:text-emerald-400');
+					btn.classList.remove('bg-gray-800','hover:bg-gray-700','border-gray-700','hover:border-emerald-500','text-gray-300','hover:text-emerald-400');
 					btn.classList.add('bg-emerald-900/30','border-emerald-700','text-emerald-400','cursor-default');
 					btnText.textContent = '✓ ' + npub.slice(0,10) + '...' + npub.slice(-5);
 				} catch(e) {
@@ -317,6 +321,18 @@ templ landingPageTemplate() {
 					btnText.textContent = 'Cancelled — try again';
 					setTimeout(function() { btnText.textContent = 'Connect with Nostr'; }, 2000);
 				}
+			}
+
+			function validateWaitlist() {
+				var npub = document.getElementById('npub-input').value.trim();
+				var email = document.getElementById('email-input').value.trim();
+				var err = document.getElementById('waitlist-error');
+				if (!npub && !email) {
+					err.classList.remove('hidden');
+					return false;
+				}
+				err.classList.add('hidden');
+				return true;
 			}
 		</script>
 		</body>
