@@ -41,6 +41,7 @@ templ landingPageTemplate() {
 				}
 			</script>
 			<script src="https://cdn.jsdelivr.net/npm/window.nostr.js/dist/window.nostr.min.js"></script>
+			<script src="https://cdn.jsdelivr.net/npm/@formstr/sdk@0/dist/formstr.bundle.js" defer></script>
 		</head>
 		<body class="bg-gray-950 text-gray-100 font-sans antialiased">
 			<!-- HERO -->
@@ -178,8 +179,7 @@ templ landingPageTemplate() {
 				<div class="mx-auto max-w-xl text-center">
 					<h2 class="text-3xl sm:text-4xl font-extrabold mb-4">Get iOS TestFlight Access</h2>
 					<p class="text-lg text-gray-400 mb-10">Launching at Bitcoin Conference Las Vegas — April 2026. Limited spots.</p>
-					<!-- TODO: replace action URL with your Formspree endpoint (formspree.io/new) -->
-					<form id="waitlist-form" action="https://formspree.io/f/REPLACE_WITH_YOUR_ID" method="POST" class="flex flex-col gap-4 text-left" onsubmit="return validateWaitlist()">
+						<form id="waitlist-form" class="flex flex-col gap-4 text-left" onsubmit="submitWaitlist(event)">
 						<!-- Nostr path -->
 						<div>
 							<button
@@ -191,7 +191,7 @@ templ landingPageTemplate() {
 								<svg class="w-4 h-4 flex-shrink-0" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><path d="M12 2a15.3 15.3 0 014 10 15.3 15.3 0 01-4 10 15.3 15.3 0 01-4-10 15.3 15.3 0 014-10z"/><line x1="2" y1="12" x2="22" y2="12"/></svg>
 								<span id="nostr-btn-text">Connect with Nostr</span>
 							</button>
-							<input type="hidden" id="npub-input" name="npub"/>
+							<input type="hidden" id="npub-input"/>
 						</div>
 						<!-- Divider -->
 						<div class="flex items-center gap-3">
@@ -203,20 +203,35 @@ templ landingPageTemplate() {
 						<div>
 							<input
 								type="email"
-								name="email"
 								id="email-input"
 								placeholder="your@email.com"
 								class="w-full bg-gray-900 border border-gray-700 rounded-lg px-4 py-3 text-gray-100 placeholder-gray-600 focus:outline-none focus:border-emerald-500"
 							/>
 						</div>
+						<!-- Comments -->
+						<div>
+							<textarea
+								id="comments-input"
+								placeholder="Anything else? (handicap, what you want to see, how you found us)"
+								rows="3"
+								class="w-full bg-gray-900 border border-gray-700 rounded-lg px-4 py-3 text-gray-100 placeholder-gray-600 focus:outline-none focus:border-emerald-500 resize-none"
+							></textarea>
+						</div>
 						<p id="waitlist-error" class="text-red-400 text-sm hidden">Please connect with Nostr or enter an email address.</p>
 						<button
+							id="submit-btn"
 							type="submit"
 							class="w-full bg-emerald-500 hover:bg-emerald-400 text-gray-950 font-bold px-8 py-3 rounded-lg text-lg transition-colors"
 						>
 							Request TestFlight Access
 						</button>
 					</form>
+					<!-- Success state -->
+					<div id="waitlist-success" class="hidden text-center py-8">
+						<div class="text-4xl mb-4">⛳</div>
+						<h3 class="text-xl font-bold text-emerald-400 mb-2">You're on the list.</h3>
+						<p class="text-gray-400">We'll be in touch before launch.</p>
+					</div>
 					<p class="mt-8 text-sm text-gray-600">
 						Or find us on Nostr —
 						<a
@@ -252,6 +267,7 @@ templ landingPageTemplate() {
 			</footer>
 		<script>
 			document.addEventListener('DOMContentLoaded', function() {
+				prefetchForm();
 				var svg = document.querySelector('[aria-label="Shot dispersion scatter plot"]');
 				if (!svg) return;
 				var observer = new IntersectionObserver(function(entries) {
@@ -323,16 +339,50 @@ templ landingPageTemplate() {
 				}
 			}
 
-			function validateWaitlist() {
+			// --- Formstr / Nostr submit ---
+			var FORMSTR_NADDR = 'naddr1qvzqqqr4mqpzpeqyy9vkmyxxcj05qqhjt9udxehdf4jxgu8rf0nxrn0v7e8z682uqy2hwumn8ghj7un9d3shjtnyv9kh2uewd9hj7qghwaehxw309aex2mrp0yh8qunfd4skctnwv46z7qgdwaehxw309ahx7uewd3hkcqg7waehxw309aex2mrp0yhxummnw3ezuamfwfjkgmn9wshx5up0qyw8wumn8ghj7mn0wd68ytfsxyh8jcttd95x7mnwv5hxxmmdqyv8wumn8ghj7un9d3shjtnndehhyapwwdhkx6tpdsq3vamnwvaz7tmjv4kxz7fwdehhxarj9e3xzmnyqyghwumn8ghj7mn0wd68yv339e3k7mgqqej4xvnfd45spe7dc6';
+			var FORMSTR_VIEW_KEY = '39b9ed33946c2231c98d70a2e16ca41e5a1d008734ed06b4252535249ad8bccc';
+			var FIELD_EMAIL = 'template_field_1772025499985_0';
+			var FIELD_NPUB  = 'template_field_1772025499985_1';
+			var FIELD_COMMENTS = 'template_field_1772025499985_4';
+			var _cachedForm = null;
+
+			async function prefetchForm() {
+				try {
+					if (typeof FormstrSDK === 'undefined') return;
+					var sdk = new FormstrSDK.FormstrSDK();
+					_cachedForm = await sdk.fetchFormWithViewKey(FORMSTR_NADDR, FORMSTR_VIEW_KEY);
+				} catch(e) { console.warn('Formstr prefetch:', e.message); }
+			}
+
+			async function submitWaitlist(e) {
+				e.preventDefault();
 				var npub = document.getElementById('npub-input').value.trim();
 				var email = document.getElementById('email-input').value.trim();
+				var comments = document.getElementById('comments-input').value.trim();
 				var err = document.getElementById('waitlist-error');
-				if (!npub && !email) {
-					err.classList.remove('hidden');
-					return false;
-				}
+				if (!npub && !email) { err.classList.remove('hidden'); return; }
 				err.classList.add('hidden');
-				return true;
+				var btn = document.getElementById('submit-btn');
+				btn.textContent = 'Submitting...';
+				btn.disabled = true;
+				try {
+					var sdk = new FormstrSDK.FormstrSDK();
+					var form = _cachedForm || await sdk.fetchFormWithViewKey(FORMSTR_NADDR, FORMSTR_VIEW_KEY);
+					var values = {};
+					if (email) values[FIELD_EMAIL] = email;
+					if (npub) values[FIELD_NPUB] = npub;
+					if (comments) values[FIELD_COMMENTS] = comments;
+					await sdk.submit(form, values);
+					document.getElementById('waitlist-form').classList.add('hidden');
+					document.getElementById('waitlist-success').classList.remove('hidden');
+				} catch(e) {
+					btn.textContent = 'Request TestFlight Access';
+					btn.disabled = false;
+					err.textContent = 'Something went wrong — please try again.';
+					err.classList.remove('hidden');
+					console.error('Submit error:', e);
+				}
 			}
 		</script>
 		</body>
