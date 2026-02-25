@@ -7,7 +7,7 @@ templ landingPageTemplate() {
 			<meta charset="UTF-8"/>
 			<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
 			<title>RAID Golf — Proof of Play</title>
-			<meta name="description" content="Practice analytics. On-course scoring. Lightning settlements. Built on Nostr."/>
+			<meta name="description" content="On-course scoring. Real money on the line. Your data, yours forever. No company in the middle."/>
 			if tailwindDebugStuff != "" {
 				@templ.Raw(tailwindDebugStuff)
 			} else {
@@ -18,7 +18,8 @@ templ landingPageTemplate() {
 					from { opacity: 0; transform: scale(0.3); }
 					to   { opacity: 1; transform: scale(1); }
 				}
-				.dot-animate { animation: scatter-in 0.6s ease-out both; }
+				.dot-animate { animation: scatter-in 0.6s ease-out both; animation-play-state: paused; }
+				.dot-animate.triggered { animation-play-state: running; }
 			</style>
 		</head>
 		<body class="bg-gray-950 text-gray-100 font-sans antialiased">
@@ -29,11 +30,11 @@ templ landingPageTemplate() {
 					<div class="flex-1 max-w-xl">
 						<p class="uppercase tracking-widest text-sm text-emerald-400 font-semibold mb-6">Proof of Play.</p>
 						<h1 class="text-4xl sm:text-5xl md:text-6xl font-extrabold leading-tight mb-6">
-							Handicap is a number.<br/>
-							<span class="text-emerald-400">RAID</span> is your actual game.
+							The open standard<br/>
+							{ "for" } <span class="text-emerald-400">golf.</span>
 						</h1>
 						<p class="text-lg text-gray-400 mb-10 max-w-md">
-							Practice analytics. On-course scoring. Lightning settlements. Built on Nostr — owned by no one.
+							On-course scoring. Real money on the line. Your data, yours forever. No company in the middle.
 						</p>
 						<a
 							href="#waitlist"
@@ -88,22 +89,8 @@ templ landingPageTemplate() {
 			</section>
 			<!-- THREE PILLARS -->
 			<section class="py-24 px-6">
-				<div class="mx-auto max-w-6xl grid grid-cols-1 md:grid-cols-3 gap-8">
-					<!-- Pillar 1: Practice -->
-					<div class="bg-gray-900 border border-gray-800 rounded-2xl p-8 flex flex-col items-start">
-						<!-- Bullseye SVG -->
-						<svg viewBox="0 0 48 48" class="w-12 h-12 mb-6" aria-hidden="true">
-							<circle cx="24" cy="24" r="22" fill="none" stroke="#34d399" stroke-width="1.5"/>
-							<circle cx="24" cy="24" r="15" fill="none" stroke="#34d399" stroke-width="1.5"/>
-							<circle cx="24" cy="24" r="8" fill="none" stroke="#34d399" stroke-width="1.5"/>
-							<circle cx="24" cy="24" r="2.5" fill="#34d399"/>
-						</svg>
-						<h3 class="text-xl font-bold mb-3">Practice That Means Something</h3>
-						<p class="text-gray-400 leading-relaxed">
-							Connect your launch monitor. See your real numbers. Know what you are working on and whether it is working.
-						</p>
-					</div>
-					<!-- Pillar 2: Scoring -->
+				<div class="mx-auto max-w-4xl grid grid-cols-1 md:grid-cols-2 gap-8">
+					<!-- Pillar 1: Scoring -->
 					<div class="bg-gray-900 border border-gray-800 rounded-2xl p-8 flex flex-col items-start">
 						<!-- Grid SVG -->
 						<svg viewBox="0 0 48 48" class="w-12 h-12 mb-6" aria-hidden="true">
@@ -119,10 +106,10 @@ templ landingPageTemplate() {
 						</svg>
 						<h3 class="text-xl font-bold mb-3">Scoring That Keeps Up</h3>
 						<p class="text-gray-400 leading-relaxed">
-							Live multiplayer scoring across devices. See every shot as it happens, no refresh needed.
+							Live multiplayer scoring across devices. See every shot as it happens.
 						</p>
 					</div>
-					<!-- Pillar 3: Settle -->
+					<!-- Pillar 2: Settle -->
 					<div class="bg-gray-900 border border-gray-800 rounded-2xl p-8 flex flex-col items-start">
 						<!-- Lightning bolt SVG -->
 						<svg viewBox="0 0 48 48" class="w-12 h-12 mb-6" aria-hidden="true">
@@ -130,8 +117,20 @@ templ landingPageTemplate() {
 						</svg>
 						<h3 class="text-xl font-bold mb-3">Settle on the Spot</h3>
 						<p class="text-gray-400 leading-relaxed">
-							Side games with Lightning payments. The hole closes, the zap lands. Before you pull your tee out of the ground.
+							Side games with Lightning payments. The hole closes, the zap lands. Before you can put the pin back in the cup.
 						</p>
+					</div>
+				</div>
+			</section>
+			<!-- OPEN STANDARD SECTION -->
+			<section class="py-24 px-6 border-t border-gray-800">
+				<div class="mx-auto max-w-3xl">
+					<h2 class="text-3xl sm:text-4xl font-extrabold mb-10">The open standard for golf.</h2>
+					<div class="space-y-3 text-xl text-gray-300 font-medium">
+						<p>Every round, signed.</p>
+						<p>Every stat, yours.</p>
+						<p>No platform owns it.</p>
+						<p>No company can take it away.</p>
 					</div>
 				</div>
 			</section>
@@ -146,21 +145,55 @@ templ landingPageTemplate() {
 						We are not building a platform. We are building a tool.
 					</p>
 					<p class="text-xl italic text-emerald-400 font-semibold">Golf. Signed. Verified.</p>
+					<div class="mt-10 pt-8 border-t border-gray-800 text-sm text-gray-500">
+						New to Nostr?
+						<a href="https://nstart.me/en" target="_blank" rel="noopener noreferrer" class="text-emerald-400 hover:text-emerald-300 transition-colors ml-1">Get your keys</a>
+						<span class="mx-2">·</span>
+						<a href="https://njump.me" target="_blank" rel="noopener noreferrer" class="text-emerald-400 hover:text-emerald-300 transition-colors">Explore Nostr</a>
+					</div>
 				</div>
 			</section>
-			<!-- COMING SOON -->
+			<!-- EARLY ACCESS -->
 			<section id="waitlist" class="py-24 px-6 border-t border-gray-800">
-				<div class="mx-auto max-w-3xl text-center">
-					<h2 class="text-3xl sm:text-4xl font-extrabold mb-6">Launching at the Bitcoin Conference, Las Vegas — April 2026.</h2>
-					<p class="text-lg text-gray-400 mb-10">TestFlight access available for early testers.</p>
-					<a
-						href="https://njump.me/npub1eaglew60uyhrzq4v437fyvh8ry0k9hy600699qrgscdxr9hq5n5s9xlryx"
-						target="_blank"
-						rel="noopener noreferrer"
-						class="inline-block border-2 border-emerald-500 text-emerald-400 hover:bg-emerald-500 hover:text-gray-950 font-bold px-8 py-3 rounded-lg text-lg transition-colors"
-					>
-						Follow on Nostr
-					</a>
+				<div class="mx-auto max-w-xl text-center">
+					<h2 class="text-3xl sm:text-4xl font-extrabold mb-4">Get Early Access</h2>
+					<p class="text-lg text-gray-400 mb-10">Launching at the Bitcoin Conference, Las Vegas — April 2026. TestFlight spots are limited.</p>
+					<!-- TODO: replace action URL with your Formspree endpoint (formspree.io/new) -->
+					<form action="https://formspree.io/f/REPLACE_WITH_YOUR_ID" method="POST" class="flex flex-col gap-4 text-left">
+						<div>
+							<label class="block text-sm font-medium text-gray-400 mb-1">Email</label>
+							<input
+								type="email"
+								name="email"
+								placeholder="you@example.com"
+								class="w-full bg-gray-900 border border-gray-700 rounded-lg px-4 py-3 text-gray-100 placeholder-gray-600 focus:outline-none focus:border-emerald-500"
+							/>
+						</div>
+						<div>
+							<label class="block text-sm font-medium text-gray-400 mb-1">Nostr npub <span class="text-gray-600">(optional)</span></label>
+							<input
+								type="text"
+								name="npub"
+								placeholder="npub1..."
+								class="w-full bg-gray-900 border border-gray-700 rounded-lg px-4 py-3 text-gray-100 placeholder-gray-600 focus:outline-none focus:border-emerald-500"
+							/>
+						</div>
+						<button
+							type="submit"
+							class="w-full bg-emerald-500 hover:bg-emerald-400 text-gray-950 font-bold px-8 py-3 rounded-lg text-lg transition-colors"
+						>
+							Request Access
+						</button>
+					</form>
+					<p class="mt-8 text-sm text-gray-600">
+						Or find us on Nostr —
+						<a
+							href="https://primal.net/p/npub1eaglew60uyhrzq4v437fyvh8ry0k9hy600699qrgscdxr9hq5n5s9xlryx"
+							target="_blank"
+							rel="noopener noreferrer"
+							class="text-emerald-400 hover:text-emerald-300 transition-colors"
+						>{ "@" }RAID Golf</a>
+					</p>
 				</div>
 			</section>
 			<!-- FOOTER -->
@@ -174,7 +207,7 @@ templ landingPageTemplate() {
 								<path fill-rule="evenodd" d="M12 2C6.477 2 2 6.484 2 12.017c0 4.425 2.865 8.18 6.839 9.504.5.092.682-.217.682-.483 0-.237-.008-.868-.013-1.703-2.782.605-3.369-1.343-3.369-1.343-.454-1.158-1.11-1.466-1.11-1.466-.908-.62.069-.608.069-.608 1.003.07 1.531 1.032 1.531 1.032.892 1.53 2.341 1.088 2.91.832.092-.647.35-1.088.636-1.338-2.22-.253-4.555-1.113-4.555-4.951 0-1.093.39-1.988 1.029-2.688-.103-.253-.446-1.272.098-2.65 0 0 .84-.27 2.75 1.026A9.564 9.564 0 0112 6.844c.85.004 1.705.115 2.504.337 1.909-1.296 2.747-1.027 2.747-1.027.546 1.379.202 2.398.1 2.651.64.7 1.028 1.595 1.028 2.688 0 3.848-2.339 4.695-4.566 4.943.359.309.678.92.678 1.855 0 1.338-.012 2.419-.012 2.747 0 .268.18.58.688.482A10.019 10.019 0 0022 12.017C22 6.484 17.522 2 12 2z" clip-rule="evenodd"/>
 							</svg>
 						</a>
-						<a href="https://njump.me/npub1eaglew60uyhrzq4v437fyvh8ry0k9hy600699qrgscdxr9hq5n5s9xlryx" target="_blank" rel="noopener noreferrer" class="text-gray-500 hover:text-gray-300 transition-colors">
+						<a href="https://primal.net/p/npub1eaglew60uyhrzq4v437fyvh8ry0k9hy600699qrgscdxr9hq5n5s9xlryx" target="_blank" rel="noopener noreferrer" class="text-gray-500 hover:text-gray-300 transition-colors">
 							<!-- Nostr / relay icon -->
 							<svg class="w-6 h-6" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24" aria-hidden="true">
 								<circle cx="12" cy="12" r="10"/>
@@ -185,6 +218,23 @@ templ landingPageTemplate() {
 					</div>
 				</div>
 			</footer>
+		<script>
+			document.addEventListener('DOMContentLoaded', function() {
+				var svg = document.querySelector('[aria-label="Shot dispersion scatter plot"]');
+				if (!svg) return;
+				var observer = new IntersectionObserver(function(entries) {
+					entries.forEach(function(entry) {
+						if (entry.isIntersecting) {
+							entry.target.querySelectorAll('.dot-animate').forEach(function(d) {
+								d.classList.add('triggered');
+							});
+							observer.unobserve(entry.target);
+						}
+					});
+				}, { threshold: 0.4 });
+				observer.observe(svg);
+			});
+		</script>
 		</body>
 	</html>
 }

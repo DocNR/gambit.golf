@@ -1,0 +1,9 @@
+services:
+  raid-golf-web:
+    image: raid-golf-web:latest
+    container_name: raid-golf-web
+    restart: unless-stopped
+    ports:
+      - "127.0.0.1:2999:2999"
+    environment:
+      - PORT=2999
