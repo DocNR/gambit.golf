@@ -190,11 +190,21 @@ templ landingPageTemplate() {
 							/>
 						</div>
 						<div>
-							<label class="block text-sm font-medium text-gray-400 mb-1">Nostr npub <span class="text-gray-600">(optional)</span></label>
+							<label class="block text-sm font-medium text-gray-400 mb-1">Nostr <span class="text-gray-600">(optional)</span></label>
+							<button
+								type="button"
+								id="nostr-connect-btn"
+								onclick="connectNostr()"
+								class="w-full flex items-center justify-center gap-2 bg-gray-800 hover:bg-gray-700 border border-gray-700 hover:border-emerald-500 text-gray-400 hover:text-emerald-400 font-medium px-4 py-3 rounded-lg transition-colors mb-2"
+							>
+								<svg class="w-4 h-4 flex-shrink-0" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><path d="M12 2a15.3 15.3 0 014 10 15.3 15.3 0 01-4 10 15.3 15.3 0 01-4-10 15.3 15.3 0 014-10z"/><line x1="2" y1="12" x2="22" y2="12"/></svg>
+								<span id="nostr-btn-text">Connect with Nostr</span>
+							</button>
 							<input
 								type="text"
+								id="npub-input"
 								name="npub"
-								placeholder="npub1..."
+								placeholder="npub1... (or connect above)"
 								class="w-full bg-gray-900 border border-gray-700 rounded-lg px-4 py-3 text-gray-100 placeholder-gray-600 focus:outline-none focus:border-emerald-500"
 							/>
 						</div>
@@ -254,6 +264,60 @@ templ landingPageTemplate() {
 				}, { threshold: 0.4 });
 				observer.observe(svg);
 			});
+
+			// --- Nostr connect ---
+			var _bech32Charset = 'qpzry9x8gf2tvdw0s3jn54khce6mua7l';
+			function _bech32Polymod(v) {
+				var c = 1, GEN = [0x3b6a57b2,0x26508e6d,0x1ea119fa,0x3d4233dd,0x2a1462b3];
+				for (var i = 0; i < v.length; i++) { var b = c >> 25; c = (c & 0x1ffffff) << 5 ^ v[i]; for (var j = 0; j < 5; j++) if ((b >> j) & 1) c ^= GEN[j]; }
+				return c;
+			}
+			function _bech32HrpExpand(hrp) {
+				var r = []; for (var i = 0; i < hrp.length; i++) r.push(hrp.charCodeAt(i) >> 5);
+				r.push(0); for (var i = 0; i < hrp.length; i++) r.push(hrp.charCodeAt(i) & 31); return r;
+			}
+			function _bech32CreateChecksum(hrp, data) {
+				var values = _bech32HrpExpand(hrp).concat(data).concat([0,0,0,0,0,0]);
+				var mod = _bech32Polymod(values) ^ 1;
+				var ret = []; for (var i = 0; i < 6; i++) ret.push((mod >> (5 * (5 - i))) & 31); return ret;
+			}
+			function _convertBits(data, from, to) {
+				var acc = 0, bits = 0, result = [];
+				for (var i = 0; i < data.length; i++) { acc = (acc << from) | data[i]; bits += from; while (bits >= to) { bits -= to; result.push((acc >> bits) & ((1 << to) - 1)); } }
+				if (bits > 0) result.push((acc << (to - bits)) & ((1 << to) - 1));
+				return result;
+			}
+			function hexToNpub(hex) {
+				var bytes = []; for (var i = 0; i < hex.length; i += 2) bytes.push(parseInt(hex.slice(i, i+2), 16));
+				var words = _convertBits(bytes, 8, 5);
+				var combined = words.concat(_bech32CreateChecksum('npub', words));
+				return 'npub1' + combined.map(function(v) { return _bech32Charset[v]; }).join('');
+			}
+
+			async function connectNostr() {
+				var btn = document.getElementById('nostr-connect-btn');
+				var btnText = document.getElementById('nostr-btn-text');
+				var npubInput = document.getElementById('npub-input');
+				if (!window.nostr) {
+					btnText.textContent = 'No extension found — install Alby or nos2x';
+					setTimeout(function() { btnText.textContent = 'Connect with Nostr'; }, 3000);
+					return;
+				}
+				try {
+					btnText.textContent = 'Connecting...';
+					btn.disabled = true;
+					var pubkey = await window.nostr.getPublicKey();
+					var npub = hexToNpub(pubkey);
+					npubInput.value = npub;
+					btn.classList.remove('bg-gray-800','hover:bg-gray-700','border-gray-700','hover:border-emerald-500','text-gray-400','hover:text-emerald-400');
+					btn.classList.add('bg-emerald-900/30','border-emerald-700','text-emerald-400','cursor-default');
+					btnText.textContent = '✓ ' + npub.slice(0,10) + '...' + npub.slice(-5);
+				} catch(e) {
+					btn.disabled = false;
+					btnText.textContent = 'Cancelled — try again';
+					setTimeout(function() { btnText.textContent = 'Connect with Nostr'; }, 2000);
+				}
+			}
 		</script>
 		</body>
 	</html>
