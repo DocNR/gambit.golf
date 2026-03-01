@@ -3,6 +3,7 @@ package main
 import (
 	"context"
 	"fmt"
+	"sort"
 	"strconv"
 	"time"
 
@@ -30,6 +31,12 @@ type RoundPageData struct {
 	// From 1502s + 31501s
 	PlayerScores []PlayerScoreData
 
+	// Comments (kind 1111)
+	Comments []CommentData
+
+	// Round metadata
+	EventID string // 1501 event ID (for comment compose)
+
 	// Round state (derived)
 	State           string // "live" | "final" | "waiting"
 	PlayersTotal    int
@@ -51,6 +58,16 @@ type PlayerScoreData struct {
 	ScoreToPar int
 	IsFinal    bool   // true if from 1502, false if from 31501
 	EventId    string // event ID for linking
+}
+
+// CommentData represents a kind 1111 comment on a round.
+type CommentData struct {
+	Author    PlayerData
+	Content   string
+	CreatedAt time.Time
+	EventId   string
+	Type      string // "banter" | "settlement" | "summary"
+	IsPinned  bool   // true for settlement/summary from bot
 }
 
 // buildRoundPageData constructs the full round page data from a 1501 event.
@@ -87,10 +104,31 @@ func buildRoundPageData(ctx context.Context, event *nostr.Event, metadata *Kind1
 		}
 	}
 
+	rpd.EventID = event.ID
+
 	// Fetch 1502s and 31501s from relay
 	records, livecards := fetchScores(ctx, event.ID)
 
-	// Resolve player profiles
+	// Fetch kind 1111 comments
+	rpd.Comments = fetchComments(ctx, event.ID)
+
+	// Resolve player profiles (include comment authors)
+	commentPubkeys := make(map[string]bool)
+	for _, c := range rpd.Comments {
+		commentPubkeys[c.Author.PubkeyHex] = true
+	}
+	for pk := range commentPubkeys {
+		found := false
+		for _, existing := range playerPubkeys {
+			if existing == pk {
+				found = true
+				break
+			}
+		}
+		if !found {
+			playerPubkeys = append(playerPubkeys, pk)
+		}
+	}
 	profiles := fetchPlayerProfiles(ctx, playerPubkeys)
 
 	// Build player list
@@ -98,6 +136,13 @@ func buildRoundPageData(ctx context.Context, event *nostr.Event, metadata *Kind1
 		pd := profiles[pk]
 		pd.Role = playerRoles[pk]
 		rpd.Players = append(rpd.Players, pd)
+	}
+
+	// Enrich comment authors with resolved profiles
+	for i, c := range rpd.Comments {
+		if pd, ok := profiles[c.Author.PubkeyHex]; ok {
+			rpd.Comments[i].Author = pd
+		}
 	}
 
 	// Build player scores: prefer 1502 (final) over 31501 (live)
@@ -232,6 +277,78 @@ func fetchScores(ctx context.Context, initiationEventID string) (records []*nost
 	return
 }
 
+// gambitBotPubkey is the Gambit Bot's hex pubkey for identifying pinned comments.
+const gambitBotPubkey = "c8322d575eaeebe322e61704ed2fbc33dc40a59536fede2261d805e6070bd6dd"
+
+// fetchComments queries relay.gambit.golf for kind 1111 comments referencing a 1501 event.
+// Returns comments sorted: pinned (settlement/summary) first, then banter by time ascending.
+func fetchComments(ctx context.Context, initiationEventID string) []CommentData {
+	ctx, cancel := context.WithTimeout(ctx, 6*time.Second)
+	defer cancel()
+
+	relay, err := sys.Pool.EnsureRelay(gambitRelay)
+	if err != nil {
+		log.Warn().Err(err).Msg("failed to connect to gambit relay for comments")
+		return nil
+	}
+
+	// Kind 1111 with #E = 1501 ID (uppercase E = root marker per NIP-22)
+	// Also try lowercase #e for iOS client compatibility
+	filter := nostr.Filter{
+		Kinds: []int{1111},
+		Tags:  nostr.TagMap{"e": {initiationEventID}},
+	}
+
+	ch, err := relay.QueryEvents(ctx, filter)
+	if err != nil {
+		log.Warn().Err(err).Msg("failed to query kind 1111 comments")
+		return nil
+	}
+
+	var comments []CommentData
+	seen := make(map[string]bool)
+	for evt := range ch {
+		if seen[evt.ID] {
+			continue
+		}
+		seen[evt.ID] = true
+
+		cd := CommentData{
+			Author: PlayerData{
+				PubkeyHex: evt.PubKey,
+			},
+			Content:   evt.Content,
+			CreatedAt: evt.CreatedAt.Time(),
+			EventId:   evt.ID,
+			Type:      "banter",
+		}
+
+		// Check for type tag
+		for _, tag := range evt.Tags {
+			if len(tag) >= 2 && tag[0] == "type" {
+				cd.Type = tag[1]
+			}
+		}
+
+		// Pin settlement/summary from the bot
+		if cd.Type == "settlement" || cd.Type == "summary" {
+			cd.IsPinned = true
+		}
+
+		comments = append(comments, cd)
+	}
+
+	// Sort: pinned first, then by time ascending
+	sort.Slice(comments, func(i, j int) bool {
+		if comments[i].IsPinned != comments[j].IsPinned {
+			return comments[i].IsPinned
+		}
+		return comments[i].CreatedAt.Before(comments[j].CreatedAt)
+	})
+
+	return comments
+}
+
 // fetchPlayerProfiles resolves kind 0 profiles for a list of pubkeys.
 func fetchPlayerProfiles(ctx context.Context, pubkeys []string) map[string]PlayerData {
 	profiles := make(map[string]PlayerData, len(pubkeys))
@@ -333,6 +450,36 @@ func formatDate(dateStr string) string {
 		return dateStr[:10]
 	}
 	return dateStr
+}
+
+func commentBgClass(c CommentData) string {
+	if c.IsPinned {
+		return " bg-yellow-50"
+	}
+	return ""
+}
+
+func formatCommentTime(t time.Time) string {
+	now := time.Now()
+	diff := now.Sub(t)
+	switch {
+	case diff < time.Minute:
+		return "just now"
+	case diff < time.Hour:
+		m := int(diff.Minutes())
+		if m == 1 {
+			return "1m ago"
+		}
+		return fmt.Sprintf("%dm ago", m)
+	case diff < 24*time.Hour:
+		h := int(diff.Hours())
+		if h == 1 {
+			return "1h ago"
+		}
+		return fmt.Sprintf("%dh ago", h)
+	default:
+		return t.Format("Jan 2, 3:04 PM")
+	}
 }
 
 // Legacy helpers for golf_scorecard_page.templ (single-player 1502 view)

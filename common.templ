@@ -25,13 +25,15 @@ templ headCommonTemplate(params HeadParams) {
 	</style>
 	<meta name="theme-color" content="#10b981"/>
 	if params.NaddrNaked != "" {
-		<link rel="canonical" href={ "https://njump.me/" + params.NaddrNaked }/>
+		<link rel="canonical" href={ "https://gambit.golf/" + params.NaddrNaked }/>
 	} else {
-		<link rel="canonical" href={ "https://njump.me/" + params.NeventNaked }/>
+		<link rel="canonical" href={ "https://gambit.golf/" + params.NeventNaked }/>
 	}
 	<script type="text/hyperscript">
 on load get [navigator.userAgent.includes('Safari'), navigator.userAgent.includes('Chrome')] then if it[0] is true and it[1] is false add .safari to <body /> end
 	</script>
+	<!-- Capture real NIP-07 extension before window.nostr.js can override it -->
+	<script>window._nip07 = window.nostr || null;</script>
 	<!-- NIP-46 remote signer support (window.nostr.js) -->
 	<!-- Allows users without a browser extension to connect via bunker:// URI -->
 	<script>
@@ -45,9 +47,9 @@ on load get [navigator.userAgent.includes('Safari'), navigator.userAgent.include
 				"wss://relay.primal.net"
 			],
 			appMetadata: {
-				name: "RAID Golf",
-				url: "https://raid.golf",
-				image: "https://raid.golf/njump/static/logo-icon.png"
+				name: "Gambit Golf",
+				url: "https://gambit.golf",
+				image: "https://gambit.golf/njump/static/logo-icon.png"
 			}
 		}
 	</script>

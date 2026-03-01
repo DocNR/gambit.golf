@@ -63,7 +63,7 @@ func renderOEmbed(w http.ResponseWriter, r *http.Request) {
 
 	res := OEmbedResponse{
 		Version:      "1.0",
-		ProviderName: "njump",
+		ProviderName: "Gambit Golf",
 		ProviderURL:  "https://" + host,
 		Title:        data.event.author.Name + " wrote",
 		AuthorName:   data.event.authorLong(),

@@ -77,9 +77,9 @@ templ golfLiveScorecardPageTemplate(params GolfLiveScorecardPageParams, isEmbed 
 			<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
 			<title>
 				if params.LiveRound.Status == "active" {
-					Live Round - RAID Golf
+					Live Round - Gambit Golf
 				} else {
-					Round Complete - RAID Golf
+					Round Complete - Gambit Golf
 				}
 			</title>
 			@openGraphTemplate(params.OpenGraphParams)
@@ -568,11 +568,11 @@ templ golfLiveScorecardPageTemplate(params GolfLiveScorecardPageParams, isEmbed 
 					<pre class="raw-json-content">@templ.Raw(string(params.Details.EventJSON))</pre>
 				</details>
 
-				<!-- RAID Golf CTA -->
+				<!-- Gambit Golf CTA -->
 				<div class="app-link">
 					<div class="app-link-content">
 						<div>
-							<h3>⛳ RAID Golf</h3>
+							<h3>⛳ Gambit Golf</h3>
 							<p>Track your rounds on the Nostr network</p>
 						</div>
 						<a href="#">Download App</a>

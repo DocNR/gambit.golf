@@ -248,6 +248,238 @@ templ golfRoundContent(params GolfRoundPageParams) {
 			}
 		</div>
 
+		<!-- Comments Section -->
+		<div class="mt-4 bg-white border-2 border-gray-800 rounded-lg shadow-xl overflow-hidden" style="color: #111827;" id="comments-section">
+			<div class="bg-gray-100 border-b-2 border-gray-800 px-4 py-3 flex items-center justify-between">
+				<h2 class="text-sm font-bold text-gray-900 uppercase tracking-wide">
+					Comments
+					if len(params.Round.Comments) > 0 {
+						<span class="ml-1 text-gray-500 font-normal">({ strconv.Itoa(len(params.Round.Comments)) })</span>
+					}
+				</h2>
+				<!-- NIP-07 Login Button -->
+				<button
+					id="nostr-login-btn"
+					onclick="connectNostrComment()"
+					class="flex items-center gap-1.5 bg-gray-800 hover:bg-gray-700 text-white text-xs font-semibold px-3 py-1.5 rounded-lg transition-colors"
+				>
+					<svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><path d="M12 2a15.3 15.3 0 014 10 15.3 15.3 0 01-4 10 15.3 15.3 0 01-4-10 15.3 15.3 0 014-10z"/><line x1="2" y1="12" x2="22" y2="12"/></svg>
+					<span id="nostr-login-text">Sign in with Nostr</span>
+				</button>
+			</div>
+
+			<!-- Server-rendered comments -->
+			<div class="divide-y divide-gray-200" id="comments-list">
+				if len(params.Round.Comments) > 0 {
+					for _, c := range params.Round.Comments {
+						<div class={ "px-4 py-3" + commentBgClass(c) }>
+							<div class="flex items-start gap-2.5">
+								if c.Author.Picture != "" {
+									<img src={ c.Author.Picture } alt="" class="w-7 h-7 rounded-full flex-shrink-0 mt-0.5"/>
+								} else {
+									<div class="w-7 h-7 rounded-full bg-gray-300 flex-shrink-0 mt-0.5"></div>
+								}
+								<div class="flex-1 min-w-0">
+									<div class="flex items-center gap-2">
+										<span class="text-sm font-semibold text-gray-900">{ c.Author.DisplayName }</span>
+										if c.IsPinned {
+											<span class="text-xs bg-yellow-200 text-yellow-800 px-1.5 py-0.5 rounded font-medium">{ c.Type }</span>
+										}
+										<span class="text-xs text-gray-400">{ formatCommentTime(c.CreatedAt) }</span>
+									</div>
+									<p class="text-sm text-gray-700 mt-0.5 whitespace-pre-wrap break-words">{ c.Content }</p>
+								</div>
+							</div>
+						</div>
+					}
+				} else {
+					<div class="px-4 py-6 text-center text-sm text-gray-400" id="no-comments-msg">
+						No comments yet. Be the first!
+					</div>
+				}
+			</div>
+
+			<!-- Comment Compose (hidden until logged in) -->
+			<div id="comment-compose" class="border-t-2 border-gray-800 p-3 hidden">
+				<div class="flex gap-2">
+					<img id="compose-avatar" src="" alt="" class="w-7 h-7 rounded-full flex-shrink-0 mt-0.5 hidden"/>
+					<div class="flex-1">
+						<textarea
+							id="comment-input"
+							rows="2"
+							placeholder="Add a comment..."
+							class="w-full bg-gray-50 border border-gray-300 rounded-lg px-3 py-2 text-sm text-gray-900 placeholder-gray-400 focus:outline-none focus:border-green-500 focus:ring-1 focus:ring-green-500 resize-none"
+						></textarea>
+						<div class="flex items-center justify-between mt-1.5">
+							<span id="comment-status" class="text-xs text-gray-400"></span>
+							<button
+								id="comment-send-btn"
+								onclick="sendComment()"
+								disabled
+								class="bg-green-600 hover:bg-green-700 disabled:bg-gray-300 disabled:cursor-not-allowed text-white text-xs font-semibold px-4 py-1.5 rounded-lg transition-colors"
+							>
+								Send
+							</button>
+						</div>
+					</div>
+				</div>
+			</div>
+		</div>
+
+		<!-- Inline JS for NIP-07 + WebSocket comment publishing -->
+		<script>
+			(function() {
+				var RELAY = 'wss://relay.gambit.golf';
+				var EVENT_ID = '{ params.Round.EventID }';
+				var _pubkeyHex = null;
+				var _npub = null;
+
+				// --- bech32 encoding (same as homepage) ---
+				var B32 = 'qpzry9x8gf2tvdw0s3jn54khce6mua7l';
+				function b32poly(v) {
+					var c=1,G=[0x3b6a57b2,0x26508e6d,0x1ea119fa,0x3d4233dd,0x2a1462b3];
+					for(var i=0;i<v.length;i++){var b=c>>25;c=(c&0x1ffffff)<<5^v[i];for(var j=0;j<5;j++)if((b>>j)&1)c^=G[j];}return c;
+				}
+				function b32hrp(h){var r=[];for(var i=0;i<h.length;i++)r.push(h.charCodeAt(i)>>5);r.push(0);for(var i=0;i<h.length;i++)r.push(h.charCodeAt(i)&31);return r;}
+				function b32chk(h,d){var v=b32hrp(h).concat(d).concat([0,0,0,0,0,0]);var m=b32poly(v)^1;var r=[];for(var i=0;i<6;i++)r.push((m>>(5*(5-i)))&31);return r;}
+				function cvtBits(d,f,t){var a=0,b=0,r=[];for(var i=0;i<d.length;i++){a=(a<<f)|d[i];b+=f;while(b>=t){b-=t;r.push((a>>b)&((1<<t)-1));}}if(b>0)r.push((a<<(t-b))&((1<<t)-1));return r;}
+				function hexToNpub(hex){var bytes=[];for(var i=0;i<hex.length;i+=2)bytes.push(parseInt(hex.slice(i,i+2),16));var w=cvtBits(bytes,8,5);return 'npub1'+w.concat(b32chk('npub',w)).map(function(v){return B32[v];}).join('');}
+
+				// --- Connect ---
+				window.connectNostrComment = async function() {
+					var btn = document.getElementById('nostr-login-btn');
+					var txt = document.getElementById('nostr-login-text');
+					var signer = window._nip07 || window.nostr;
+					if (!signer) {
+						txt.textContent = 'No extension found';
+						setTimeout(function(){txt.textContent='Sign in with Nostr';},2500);
+						return;
+					}
+					try {
+						txt.textContent = 'Connecting...';
+						btn.disabled = true;
+						_pubkeyHex = await signer.getPublicKey();
+						_npub = hexToNpub(_pubkeyHex);
+						// Update button to show connected state
+						btn.classList.remove('bg-gray-800','hover:bg-gray-700');
+						btn.classList.add('bg-green-800','cursor-default');
+						txt.textContent = _npub.slice(0,10) + '...' + _npub.slice(-4);
+						// Show compose box
+						document.getElementById('comment-compose').classList.remove('hidden');
+						document.getElementById('comment-input').addEventListener('input', function() {
+							document.getElementById('comment-send-btn').disabled = !this.value.trim();
+						});
+					} catch(e) {
+						btn.disabled = false;
+						txt.textContent = 'Cancelled';
+						setTimeout(function(){txt.textContent='Sign in with Nostr';},2000);
+					}
+				};
+
+				// --- Send comment ---
+				window.sendComment = async function() {
+					var input = document.getElementById('comment-input');
+					var content = input.value.trim();
+					if (!content || !_pubkeyHex) return;
+					var btn = document.getElementById('comment-send-btn');
+					var status = document.getElementById('comment-status');
+					btn.disabled = true;
+					btn.textContent = 'Sending...';
+					status.textContent = '';
+					try {
+						var signer = window._nip07 || window.nostr;
+						var now = Math.floor(Date.now() / 1000);
+						var evt = {
+							kind: 1111,
+							created_at: now,
+							tags: [
+								['E', EVENT_ID, RELAY, 'root'],
+								['K', '1501'],
+								['p', EVENT_ID],
+								['type', 'banter']
+							],
+							content: content,
+							pubkey: _pubkeyHex
+						};
+						var signed = await signer.signEvent(evt);
+						// Publish via WebSocket
+						await publishToRelay(signed);
+						// Optimistic render
+						appendComment({
+							picture: '',
+							name: _npub.slice(0,10) + '...' + _npub.slice(-4),
+							content: content,
+							time: 'just now',
+							type: 'banter',
+							pinned: false
+						});
+						input.value = '';
+						btn.disabled = true;
+						btn.textContent = 'Send';
+						status.textContent = 'Sent!';
+						setTimeout(function(){status.textContent='';},2000);
+					} catch(e) {
+						btn.disabled = false;
+						btn.textContent = 'Send';
+						status.textContent = 'Error: ' + (e.message || 'Failed to send');
+						status.classList.add('text-red-500');
+						setTimeout(function(){status.textContent='';status.classList.remove('text-red-500');},3000);
+					}
+				};
+
+				function publishToRelay(evt) {
+					return new Promise(function(resolve, reject) {
+						var ws = new WebSocket(RELAY);
+						var timer = setTimeout(function(){ws.close();reject(new Error('timeout'));}, 8000);
+						ws.onopen = function() {
+							ws.send(JSON.stringify(['EVENT', evt]));
+						};
+						ws.onmessage = function(msg) {
+							try {
+								var data = JSON.parse(msg.data);
+								if (data[0] === 'OK' && data[2] === true) {
+									clearTimeout(timer);
+									ws.close();
+									resolve();
+								} else if (data[0] === 'OK' && data[2] === false) {
+									clearTimeout(timer);
+									ws.close();
+									reject(new Error(data[3] || 'Relay rejected'));
+								}
+							} catch(e) {}
+						};
+						ws.onerror = function() { clearTimeout(timer); reject(new Error('WebSocket error')); };
+					});
+				}
+
+				function appendComment(c) {
+					var list = document.getElementById('comments-list');
+					var noMsg = document.getElementById('no-comments-msg');
+					if (noMsg) noMsg.remove();
+					var div = document.createElement('div');
+					div.className = 'px-4 py-3';
+					div.innerHTML =
+						'<div class="flex items-start gap-2.5">' +
+						'<div class="w-7 h-7 rounded-full bg-green-200 flex-shrink-0 mt-0.5"></div>' +
+						'<div class="flex-1 min-w-0">' +
+						'<div class="flex items-center gap-2">' +
+						'<span class="text-sm font-semibold text-gray-900">' + escHtml(c.name) + '</span>' +
+						'<span class="text-xs text-gray-400">' + escHtml(c.time) + '</span>' +
+						'</div>' +
+						'<p class="text-sm text-gray-700 mt-0.5 whitespace-pre-wrap break-words">' + escHtml(c.content) + '</p>' +
+						'</div></div>';
+					list.appendChild(div);
+					div.scrollIntoView({behavior:'smooth', block:'nearest'});
+				}
+
+				function escHtml(s) {
+					var d = document.createElement('div');
+					d.appendChild(document.createTextNode(s));
+					return d.innerHTML;
+				}
+			})();
+		</script>
+
 		<!-- App Link -->
 		<div class="mt-4 p-4 bg-gradient-to-r from-green-50 to-blue-50 rounded-lg border border-green-200">
 			<div class="flex items-center justify-between flex-wrap gap-2">
