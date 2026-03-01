@@ -8,9 +8,9 @@ type GolfRoundPageParams struct {
 	BaseEventPageParams
 	OpenGraphParams
 	HeadParams
-	Details     DetailsParams
-	GolfRound   Kind1501Metadata
-	Clients     []ClientReference
+	Details   DetailsParams
+	Round     RoundPageData
+	Clients   []ClientReference
 }
 
 templ golfRoundTemplate(params GolfRoundPageParams, isEmbed bool) {
@@ -37,234 +37,230 @@ templ golfRoundTemplate(params GolfRoundPageParams, isEmbed bool) {
 }
 
 templ golfRoundContent(params GolfRoundPageParams) {
-	<div class="max-w-6xl mx-auto p-6" style="color: #111827;">
-		<!-- Traditional Golf Scorecard -->
+	<div class="max-w-6xl mx-auto p-4 md:p-6" style="color: #111827;">
+		<!-- Scorecard Card -->
 		<div class="bg-white border-2 border-gray-800 rounded-lg shadow-xl overflow-hidden" style="color: #111827;">
-			<!-- Scorecard Header -->
+			<!-- Header -->
 			<div class="bg-gray-100 border-b-2 border-gray-800 p-4">
-				<div class="flex items-center justify-between">
-					<div class="flex-1">
-						<h1 class="text-2xl md:text-3xl font-bold uppercase tracking-wide" style="color: #111827;">
-							🏌️ Golf Round
+				<div class="flex items-center justify-between flex-wrap gap-2">
+					<div class="flex-1 min-w-0">
+						<h1 class="text-xl md:text-2xl font-bold text-gray-900 truncate">
+							if params.Round.CourseName != "" {
+								{ params.Round.CourseName }
+							} else {
+								Golf Round
+							}
 						</h1>
-						<div class="text-lg font-semibold mt-1" style="color: #374151;">
-							Bethpage Black Course
-						</div>
-						<div class="text-sm mt-1" style="color: #4B5563;">
-							Course ID: { params.GolfRound.CourseRef }
-						</div>
-					</div>
-					<div class="text-right ml-4">
-						<div class="text-4xl md:text-5xl font-bold font-mono">
-							if params.GolfRound.ScoreToPar < 0 {
-								<span class="text-green-600">{ strconv.Itoa(params.GolfRound.TotalScore) }</span>
-							} else if params.GolfRound.ScoreToPar > 0 {
-								<span class="text-red-600">{ strconv.Itoa(params.GolfRound.TotalScore) }</span>
-							} else {
-								<span class="text-blue-600">{ strconv.Itoa(params.GolfRound.TotalScore) }</span>
+						<div class="flex items-center gap-3 mt-1 text-sm text-gray-600">
+							if params.Round.TeeSet != "" {
+								<span>{ params.Round.TeeSet } tees</span>
 							}
-						</div>
-						<div class="text-lg font-semibold">
-							if params.GolfRound.ScoreToPar > 0 {
-								<span class="text-red-600">+{ strconv.Itoa(params.GolfRound.ScoreToPar) }</span>
-							} else if params.GolfRound.ScoreToPar < 0 {
-								<span class="text-green-600">{ strconv.Itoa(params.GolfRound.ScoreToPar) }</span>
-							} else {
-								<span class="text-blue-600">E</span>
+							if params.Round.Date != "" {
+								<span>{ formatDate(params.Round.Date) }</span>
 							}
+							<span class="font-mono">Par { strconv.Itoa(params.Round.TotalPar) }</span>
 						</div>
 					</div>
-				</div>
-			</div>
-
-			<!-- Player and Round Information -->
-			<div class="bg-gray-50 border-b border-gray-400 p-4">
-				<div class="grid grid-cols-1 md:grid-cols-4 gap-4 text-sm">
-					<div>
-						<span class="font-semibold" style="color: #374151;">Player:</span>
-						<span class="ml-2" style="color: #111827;">{ params.Event.author.Name }</span>
-					</div>
-					<div>
-						<span class="font-semibold" style="color: #374151;">📅 Date:</span>
-						<span class="ml-2" style="color: #111827;">
-							if params.GolfRound.Date != "" {
-								{ params.GolfRound.Date }
-							} else {
-								{ params.Event.CreatedAtStr() }
-							}
-						</span>
-					</div>
-					<div>
-						<span class="font-semibold" style="color: #374151;">🏌️ Tees:</span>
-						<span class="ml-2" style="color: #111827;">
-							if params.GolfRound.TeeSet != "" {
-								{ params.GolfRound.TeeSet }
-							} else {
-								Championship
-							}
-						</span>
-					</div>
-					<div>
-						<span class="font-semibold" style="color: #374151;">⭐ Par:</span>
-						<span class="ml-2 font-mono" style="color: #111827;">{ strconv.Itoa(params.GolfRound.Par) }</span>
-					</div>
-				</div>
-			</div>
-
-			<!-- Traditional Scorecard Grid -->
-			if len(params.GolfRound.HoleScores) > 0 {
-				<div class="p-4">
-					<h2 class="text-xl font-bold text-gray-900 mb-4 text-center uppercase tracking-wide">📊 Scorecard</h2>
-					
-					<!-- Front Nine -->
-					<div class="mb-6">
-						<div class="overflow-x-auto">
-							<table class="w-full border-collapse border-2 border-gray-800 bg-white">
-								<thead>
-									<tr class="bg-gray-200">
-										<th class="border border-gray-800 px-2 py-3 text-xs font-bold text-gray-900 uppercase tracking-wider text-center">Hole</th>
-										for i := 1; i <= 9; i++ {
-											<th class="border border-gray-800 px-2 py-3 text-sm font-bold text-gray-900 font-mono text-center">{ strconv.Itoa(i) }</th>
-										}
-										<th class="border border-gray-800 px-2 py-3 text-xs font-bold text-gray-900 bg-yellow-200 uppercase tracking-wider text-center">Out</th>
-									</tr>
-								</thead>
-								<tbody>
-									<tr class="bg-white">
-										<td class="border border-gray-800 px-2 py-4 text-xs font-bold text-gray-900 bg-gray-100 uppercase tracking-wider">Score</td>
-										for i := 1; i <= 9; i++ {
-											<td class="border border-gray-800 px-2 py-4 text-center">
-												<div class="text-lg font-bold font-mono" style="color: #111827;">
-													{ getScoreForHole(params.GolfRound.HoleScores, i) }
-												</div>
-											</td>
-										}
-										<td class="border border-gray-800 px-2 py-4 text-center bg-yellow-200">
-											<div class="text-lg font-bold font-mono text-gray-900">
-												{ getFrontNineTotal(params.GolfRound.HoleScores) }
-											</div>
-										</td>
-									</tr>
-								</tbody>
-							</table>
-						</div>
-					</div>
-
-					<!-- Back Nine -->
-					<div class="mb-6">
-						<div class="overflow-x-auto">
-							<table class="w-full border-collapse border-2 border-gray-800 bg-white">
-								<thead>
-									<tr class="bg-gray-200">
-										<th class="border border-gray-800 px-2 py-3 text-xs font-bold text-gray-900 uppercase tracking-wider text-center">Hole</th>
-										for i := 10; i <= 18; i++ {
-											<th class="border border-gray-800 px-2 py-3 text-sm font-bold text-gray-900 font-mono text-center">{ strconv.Itoa(i) }</th>
-										}
-										<th class="border border-gray-800 px-2 py-3 text-xs font-bold text-gray-900 bg-yellow-200 uppercase tracking-wider text-center">In</th>
-										<th class="border border-gray-800 px-2 py-3 text-xs font-bold text-gray-900 bg-green-200 uppercase tracking-wider text-center">Total</th>
-									</tr>
-								</thead>
-								<tbody>
-									<tr class="bg-white">
-										<td class="border border-gray-800 px-2 py-4 text-xs font-bold text-gray-900 bg-gray-100 uppercase tracking-wider">Score</td>
-										for i := 10; i <= 18; i++ {
-											<td class="border border-gray-800 px-2 py-4 text-center">
-												<div class="text-lg font-bold font-mono" style="color: #111827;">
-													{ getScoreForHole(params.GolfRound.HoleScores, i) }
-												</div>
-											</td>
-										}
-										<td class="border border-gray-800 px-2 py-4 text-center bg-yellow-200">
-											<div class="text-lg font-bold font-mono text-gray-900">
-												{ getBackNineTotal(params.GolfRound.HoleScores) }
-											</div>
-										</td>
-										<td class="border border-gray-800 px-2 py-4 text-center bg-green-200">
-											<div class="text-xl font-bold font-mono text-gray-900">
-												{ strconv.Itoa(params.GolfRound.TotalScore) }
-											</div>
-										</td>
-									</tr>
-								</tbody>
-							</table>
-						</div>
-					</div>
-				</div>
-			}
-
-			<!-- Notes -->
-			<div class="border-t border-gray-400 p-4">
-				<h2 class="text-lg font-bold text-gray-900 mb-3 uppercase tracking-wide">📝 Notes</h2>
-				<div class="bg-gray-50 border border-gray-300 p-3 rounded">
-					<p class="text-gray-700 whitespace-pre-wrap text-sm">Great round!</p>
-				</div>
-			</div>
-
-			<!-- Players -->
-			if len(params.GolfRound.Players) > 0 {
-				<div class="border-t border-gray-400 p-4">
-					<h2 class="text-lg font-bold text-gray-900 mb-3 uppercase tracking-wide">👥 Players</h2>
-					<div class="flex flex-wrap gap-2">
-						for _, player := range params.GolfRound.Players {
-							<span class="bg-gray-200 text-gray-800 px-3 py-1 border border-gray-400 text-xs font-mono">
-								{ shortenString(player, 8, 4) }
+					<div class="flex-shrink-0">
+						if params.Round.State == "final" {
+							<span class="inline-flex items-center px-3 py-1 rounded-full text-xs font-bold bg-gray-800 text-white uppercase tracking-wide">
+								Final
+							</span>
+						} else if params.Round.State == "live" {
+							<span class="inline-flex items-center px-3 py-1 rounded-full text-xs font-bold bg-green-600 text-white uppercase tracking-wide">
+								<span class="w-2 h-2 bg-white rounded-full mr-1.5 animate-pulse"></span>
+								Live
+							</span>
+						} else {
+							<span class="inline-flex items-center px-3 py-1 rounded-full text-xs font-bold bg-yellow-500 text-white uppercase tracking-wide">
+								Waiting
 							</span>
 						}
 					</div>
 				</div>
+			</div>
+
+			<!-- Scorecard Tables -->
+			if len(params.Round.PlayerScores) > 0 {
+				<div class="p-3 md:p-4">
+					<!-- Front Nine -->
+					<div class="mb-4 overflow-x-auto">
+						<table class="w-full border-collapse border-2 border-gray-800 bg-white text-center" style="min-width: 600px;">
+							<thead>
+								<tr class="bg-gray-200">
+									<th class="border border-gray-800 px-1.5 py-2 text-xs font-bold text-gray-900 uppercase text-left" style="min-width: 80px;">Hole</th>
+									for i := 1; i <= 9; i++ {
+										<th class="border border-gray-800 px-1.5 py-2 text-sm font-bold text-gray-900 font-mono">{ strconv.Itoa(i) }</th>
+									}
+									<th class="border border-gray-800 px-1.5 py-2 text-xs font-bold text-gray-900 bg-yellow-200 uppercase">Out</th>
+								</tr>
+							</thead>
+							<tbody>
+								<!-- Par Row -->
+								if len(params.Round.HolePars) >= 9 {
+									<tr class="bg-gray-50">
+										<td class="border border-gray-800 px-1.5 py-1.5 text-xs font-bold text-gray-600 uppercase text-left">Par</td>
+										for i := 0; i < 9; i++ {
+											<td class="border border-gray-800 px-1.5 py-1.5 text-sm font-mono text-gray-600">{ strconv.Itoa(params.Round.HolePars[i]) }</td>
+										}
+										<td class="border border-gray-800 px-1.5 py-1.5 text-sm font-mono text-gray-600 bg-yellow-100">{ strconv.Itoa(sumSlice(params.Round.HolePars, 0, 9)) }</td>
+									</tr>
+								}
+								<!-- Player Score Rows -->
+								for _, ps := range params.Round.PlayerScores {
+									<tr>
+										<td class="border border-gray-800 px-1.5 py-2 text-left">
+											<div class="flex items-center gap-1.5">
+												if ps.Player.Picture != "" {
+													<img src={ ps.Player.Picture } alt="" class="w-5 h-5 rounded-full flex-shrink-0"/>
+												}
+												<span class="text-xs font-bold text-gray-900 truncate">{ ps.Player.DisplayName }</span>
+												if !ps.IsFinal {
+													<span class="w-1.5 h-1.5 bg-green-500 rounded-full flex-shrink-0" title="In progress"></span>
+												}
+											</div>
+										</td>
+										for i := 0; i < 9; i++ {
+											<td class={ scoreCellClass(ps.HoleScores, params.Round.HolePars, i) }>
+												{ scoreDisplay(ps.HoleScores, i) }
+											</td>
+										}
+										<td class="border border-gray-800 px-1.5 py-2 text-sm font-bold font-mono text-gray-900 bg-yellow-100">
+											{ nineTotal(ps.HoleScores, 0, 9) }
+										</td>
+									</tr>
+								}
+							</tbody>
+						</table>
+					</div>
+
+					<!-- Back Nine -->
+					if params.Round.HoleCount > 9 {
+						<div class="mb-4 overflow-x-auto">
+							<table class="w-full border-collapse border-2 border-gray-800 bg-white text-center" style="min-width: 700px;">
+								<thead>
+									<tr class="bg-gray-200">
+										<th class="border border-gray-800 px-1.5 py-2 text-xs font-bold text-gray-900 uppercase text-left" style="min-width: 80px;">Hole</th>
+										for i := 10; i <= 18; i++ {
+											<th class="border border-gray-800 px-1.5 py-2 text-sm font-bold text-gray-900 font-mono">{ strconv.Itoa(i) }</th>
+										}
+										<th class="border border-gray-800 px-1.5 py-2 text-xs font-bold text-gray-900 bg-yellow-200 uppercase">In</th>
+										<th class="border border-gray-800 px-1.5 py-2 text-xs font-bold text-gray-900 bg-green-200 uppercase">Tot</th>
+									</tr>
+								</thead>
+								<tbody>
+									<!-- Par Row -->
+									if len(params.Round.HolePars) >= 18 {
+										<tr class="bg-gray-50">
+											<td class="border border-gray-800 px-1.5 py-1.5 text-xs font-bold text-gray-600 uppercase text-left">Par</td>
+											for i := 9; i < 18; i++ {
+												<td class="border border-gray-800 px-1.5 py-1.5 text-sm font-mono text-gray-600">{ strconv.Itoa(params.Round.HolePars[i]) }</td>
+											}
+											<td class="border border-gray-800 px-1.5 py-1.5 text-sm font-mono text-gray-600 bg-yellow-100">{ strconv.Itoa(sumSlice(params.Round.HolePars, 9, 18)) }</td>
+											<td class="border border-gray-800 px-1.5 py-1.5 text-sm font-mono text-gray-600 bg-green-100">{ strconv.Itoa(params.Round.TotalPar) }</td>
+										</tr>
+									}
+									<!-- Player Score Rows -->
+									for _, ps := range params.Round.PlayerScores {
+										<tr>
+											<td class="border border-gray-800 px-1.5 py-2 text-left">
+												<div class="flex items-center gap-1.5">
+													if ps.Player.Picture != "" {
+														<img src={ ps.Player.Picture } alt="" class="w-5 h-5 rounded-full flex-shrink-0"/>
+													}
+													<span class="text-xs font-bold text-gray-900 truncate">{ ps.Player.DisplayName }</span>
+												</div>
+											</td>
+											for i := 9; i < 18; i++ {
+												<td class={ scoreCellClass(ps.HoleScores, params.Round.HolePars, i) }>
+													{ scoreDisplay(ps.HoleScores, i) }
+												</td>
+											}
+											<td class="border border-gray-800 px-1.5 py-2 text-sm font-bold font-mono text-gray-900 bg-yellow-100">
+												{ nineTotal(ps.HoleScores, 9, 18) }
+											</td>
+											<td class="border border-gray-800 px-1.5 py-2 text-sm font-bold font-mono bg-green-100">
+												<span class={ totalScoreClass(ps.ScoreToPar) }>
+													{ strconv.Itoa(ps.Total) }
+												</span>
+											</td>
+										</tr>
+									}
+								</tbody>
+							</table>
+						</div>
+					}
+				</div>
+
+				<!-- Summary Bar -->
+				<div class="border-t-2 border-gray-800 bg-gray-50 p-4">
+					<div class="flex flex-wrap gap-4 justify-center">
+						for _, ps := range params.Round.PlayerScores {
+							<div class="flex items-center gap-2">
+								if ps.Player.Picture != "" {
+									<img src={ ps.Player.Picture } alt="" class="w-6 h-6 rounded-full"/>
+								}
+								<span class="text-sm font-semibold text-gray-900">{ ps.Player.DisplayName }</span>
+								<span class={ "text-lg font-bold font-mono " + totalScoreClass(ps.ScoreToPar) }>
+									{ strconv.Itoa(ps.Total) }
+								</span>
+								<span class={ "text-sm font-mono " + totalScoreClass(ps.ScoreToPar) }>
+									({ formatScoreToPar(ps.ScoreToPar) })
+								</span>
+							</div>
+						}
+					</div>
+				</div>
+			} else {
+				<!-- No scores yet -->
+				<div class="p-8 text-center">
+					<p class="text-gray-500 text-lg">
+						if params.Round.State == "waiting" {
+							Waiting for players to start scoring...
+						} else {
+							No scores available yet.
+						}
+					</p>
+					<!-- Player list -->
+					if len(params.Round.Players) > 0 {
+						<div class="mt-4 flex flex-wrap gap-2 justify-center">
+							for _, player := range params.Round.Players {
+								<div class="flex items-center gap-1.5 bg-gray-100 px-3 py-1.5 rounded-full">
+									if player.Picture != "" {
+										<img src={ player.Picture } alt="" class="w-5 h-5 rounded-full"/>
+									}
+									<span class="text-sm font-medium text-gray-700">{ player.DisplayName }</span>
+									if player.Role == "bot" {
+										<span class="text-xs bg-gray-300 text-gray-600 px-1.5 py-0.5 rounded">bot</span>
+									}
+								</div>
+							}
+						</div>
+					}
+				</div>
+			}
+
+			<!-- Notes -->
+			if params.Round.Notes != "" {
+				<div class="border-t border-gray-300 p-4">
+					<p class="text-sm text-gray-600 whitespace-pre-wrap">{ params.Round.Notes }</p>
+				</div>
 			}
 		</div>
 
-		<!-- Mobile App Link -->
-		<div class="mt-6 p-4 bg-gradient-to-r from-green-50 to-blue-50 rounded-lg border border-green-200">
-			<div class="flex items-center justify-between">
+		<!-- App Link -->
+		<div class="mt-4 p-4 bg-gradient-to-r from-green-50 to-blue-50 rounded-lg border border-green-200">
+			<div class="flex items-center justify-between flex-wrap gap-2">
 				<div>
-					<h3 class="font-semibold text-gray-900">⛳ RAID Golf</h3>
-					<p class="text-sm text-gray-600 mt-1">Track your rounds on the Nostr network</p>
+					<h3 class="font-semibold text-gray-900">Gambit Golf</h3>
+					<p class="text-sm text-gray-600">Play rounds with friends on the Nostr network</p>
 				</div>
-				<a href="#" class="bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded-lg text-sm font-medium transition-colors">
-					Download App
+				<a href="https://gambit.golf" class="bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded-lg text-sm font-medium transition-colors">
+					Learn More
 				</a>
 			</div>
 		</div>
 	</div>
 }
 
-func getScoreForHole(holeScores []HoleScore, hole int) string {
-	for _, score := range holeScores {
-		if score.Hole == hole {
-			return strconv.Itoa(score.Score)
-		}
-	}
-	return "-"
-}
-
-func getFrontNineTotal(holeScores []HoleScore) string {
-	total := 0
-	count := 0
-	for _, score := range holeScores {
-		if score.Hole >= 1 && score.Hole <= 9 {
-			total += score.Score
-			count++
-		}
-	}
-	if count == 0 {
-		return "-"
-	}
-	return strconv.Itoa(total)
-}
-
-func getBackNineTotal(holeScores []HoleScore) string {
-	total := 0
-	count := 0
-	for _, score := range holeScores {
-		if score.Hole >= 10 && score.Hole <= 18 {
-			total += score.Score
-			count++
-		}
-	}
-	if count == 0 {
-		return "-"
-	}
-	return strconv.Itoa(total)
-}
+// Legacy helpers (used by golf_scorecard_page.templ) are in golf_data.go

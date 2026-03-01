@@ -57,6 +57,9 @@ type Kind1501Metadata struct {
 	HoleScores    []HoleScore
 	Players       []string
 	Notes         string
+	HolePars      []int // par per hole from courseSnapshot (index 0 = hole 1)
+	TotalPar      int   // sum of hole pars
+	HoleCount     int   // number of holes
 }
 
 type HoleScore struct {
@@ -208,12 +211,42 @@ func grabData(ctx context.Context, code string, withRelays bool) (Data, error) {
 		// Parse golf round metadata from NIP-101g tags
 		golfData := &Kind1501Metadata{}
 		
-		// Parse JSON content for course name and notes
+		// Parse JSON content for course_snapshot
 		if event.Content != "" {
 			var contentData map[string]interface{}
 			if err := json.Unmarshal([]byte(event.Content), &contentData); err == nil {
-				if course, ok := contentData["course"].(string); ok {
-					golfData.CourseName = course
+				if snapshot, ok := contentData["course_snapshot"].(map[string]interface{}); ok {
+					if name, ok := snapshot["course_name"].(string); ok {
+						golfData.CourseName = name
+					}
+					if tee, ok := snapshot["tee_set"].(string); ok {
+						golfData.TeeSet = tee
+					}
+					if holeCount, ok := snapshot["hole_count"].(float64); ok {
+						golfData.HoleCount = int(holeCount)
+					}
+					if holes, ok := snapshot["holes"].([]interface{}); ok {
+						if golfData.HoleCount == 0 {
+							golfData.HoleCount = len(holes)
+						}
+						golfData.HolePars = make([]int, golfData.HoleCount)
+						for _, h := range holes {
+							if hm, ok := h.(map[string]interface{}); ok {
+								num := 0
+								par := 0
+								if n, ok := hm["hole_number"].(float64); ok {
+									num = int(n)
+								}
+								if p, ok := hm["par"].(float64); ok {
+									par = int(p)
+								}
+								if num >= 1 && num <= golfData.HoleCount {
+									golfData.HolePars[num-1] = par
+									golfData.TotalPar += par
+								}
+							}
+						}
+					}
 				}
 				if notes, ok := contentData["notes"].(string); ok {
 					golfData.Notes = notes
@@ -268,8 +301,12 @@ func grabData(ctx context.Context, code string, withRelays bool) (Data, error) {
 		}
 		golfData.HoleScores = holeScores
 		
-		// Calculate par and score to par (assuming par 72 for now)
-		golfData.Par = 72
+		// Calculate par and score to par
+		if golfData.TotalPar > 0 {
+			golfData.Par = golfData.TotalPar
+		} else {
+			golfData.Par = 72 // fallback for events without courseSnapshot
+		}
 		golfData.ScoreToPar = golfData.TotalScore - golfData.Par
 		
 		// Parse players (p tags)

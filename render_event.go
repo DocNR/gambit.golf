@@ -610,37 +610,76 @@ func renderEvent(w http.ResponseWriter, r *http.Request) {
 		// Generate custom golf scorecard image URL
 		golfImageURL := fmt.Sprintf("https://%s/njump/image/%s", host, code)
 		opengraph.BigImage = golfImageURL
-		
-		opengraph.Superscript = "Golf Round"
-		if data.Kind1501Metadata.CourseName != "" {
-			opengraph.Superscript = "Golf Round at " + data.Kind1501Metadata.CourseName
-		}
-		opengraph.Subscript = fmt.Sprintf("Score: %d by %s", data.Kind1501Metadata.TotalScore, data.event.author.ShortName())
-		if data.Kind1501Metadata.Date != "" {
-			opengraph.Text = fmt.Sprintf("Played on %s", data.Kind1501Metadata.Date)
-		}
-		if data.Kind1501Metadata.Notes != "" {
-			if opengraph.Text != "" {
-				opengraph.Text += " - " + data.Kind1501Metadata.Notes
-			} else {
-				opengraph.Text = data.Kind1501Metadata.Notes
+
+		if data.event.Kind == 1501 {
+			// Multi-player round page: fetch 1502s, 31501s, profiles
+			roundData := buildRoundPageData(ctx, data.event.Event, data.Kind1501Metadata)
+
+			opengraph.Superscript = "Golf Round"
+			if roundData.CourseName != "" {
+				opengraph.Superscript = "Golf Round at " + roundData.CourseName
 			}
-		}
+			// Build multi-player OG description
+			if len(roundData.PlayerScores) > 0 {
+				var ogParts []string
+				for _, ps := range roundData.PlayerScores {
+					ogParts = append(ogParts, fmt.Sprintf("%s %d (%s)", ps.Player.DisplayName, ps.Total, formatScoreToPar(ps.ScoreToPar)))
+				}
+				opengraph.Subscript = strings.Join(ogParts, " / ")
+			} else {
+				opengraph.Subscript = "by " + data.event.author.ShortName()
+			}
+			if roundData.Date != "" {
+				opengraph.Text = fmt.Sprintf("Played on %s", formatDate(roundData.Date))
+			}
 
-		params := GolfScorecardPageParams{
-			BaseEventPageParams: baseEventPageParams,
-			OpenGraphParams:     opengraph,
-			HeadParams: HeadParams{
-				IsProfile:   false,
-				NaddrNaked:  data.naddrNaked,
-				NeventNaked: data.neventNaked,
-			},
-			Details:   detailsData,
-			GolfRound: *data.Kind1501Metadata,
-			Clients:   generateClientList(data.event.Kind, data.nevent),
-		}
+			params := GolfRoundPageParams{
+				BaseEventPageParams: baseEventPageParams,
+				OpenGraphParams:     opengraph,
+				HeadParams: HeadParams{
+					IsProfile:   false,
+					NaddrNaked:  data.naddrNaked,
+					NeventNaked: data.neventNaked,
+				},
+				Details: detailsData,
+				Round:   roundData,
+				Clients: generateClientList(data.event.Kind, data.nevent),
+			}
 
-		component = golfScorecardPageTemplate(params, isEmbed)
+			component = golfRoundTemplate(params, isEmbed)
+		} else {
+			// 1502 single-player scorecard (legacy path)
+			opengraph.Superscript = "Golf Round"
+			if data.Kind1501Metadata.CourseName != "" {
+				opengraph.Superscript = "Golf Round at " + data.Kind1501Metadata.CourseName
+			}
+			opengraph.Subscript = fmt.Sprintf("Score: %d by %s", data.Kind1501Metadata.TotalScore, data.event.author.ShortName())
+			if data.Kind1501Metadata.Date != "" {
+				opengraph.Text = fmt.Sprintf("Played on %s", data.Kind1501Metadata.Date)
+			}
+			if data.Kind1501Metadata.Notes != "" {
+				if opengraph.Text != "" {
+					opengraph.Text += " - " + data.Kind1501Metadata.Notes
+				} else {
+					opengraph.Text = data.Kind1501Metadata.Notes
+				}
+			}
+
+			params := GolfScorecardPageParams{
+				BaseEventPageParams: baseEventPageParams,
+				OpenGraphParams:     opengraph,
+				HeadParams: HeadParams{
+					IsProfile:   false,
+					NaddrNaked:  data.naddrNaked,
+					NeventNaked: data.neventNaked,
+				},
+				Details:   detailsData,
+				GolfRound: *data.Kind1501Metadata,
+				Clients:   generateClientList(data.event.Kind, data.nevent),
+			}
+
+			component = golfScorecardPageTemplate(params, isEmbed)
+		}
 
 	case CourseData:
 		if data.Kind33501Metadata != nil && data.Kind33501Metadata.ImageURL != "" {
