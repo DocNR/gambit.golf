@@ -35,7 +35,8 @@ type RoundPageData struct {
 	Comments []CommentData
 
 	// Round metadata
-	EventID string // 1501 event ID (for comment compose)
+	EventID      string // 1501 event ID (for comment compose)
+	AuthorPubkey string // 1501 author pubkey (for p-tag in comments)
 
 	// Round state (derived)
 	State           string // "live" | "final" | "waiting"
@@ -105,6 +106,7 @@ func buildRoundPageData(ctx context.Context, event *nostr.Event, metadata *Kind1
 	}
 
 	rpd.EventID = event.ID
+	rpd.AuthorPubkey = event.PubKey
 
 	// Fetch 1502s and 31501s from relay
 	records, livecards := fetchScores(ctx, event.ID)

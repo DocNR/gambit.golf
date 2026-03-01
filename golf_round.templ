@@ -331,8 +331,11 @@ templ golfRoundContent(params GolfRoundPageParams) {
 			(function() {
 				var RELAY = 'wss://relay.gambit.golf';
 				var EVENT_ID = '{ params.Round.EventID }';
+				var AUTHOR_PK = '{ params.Round.AuthorPubkey }';
 				var _pubkeyHex = null;
 				var _npub = null;
+				var _displayName = null;
+				var _picture = null;
 
 				// --- bech32 encoding (same as homepage) ---
 				var B32 = 'qpzry9x8gf2tvdw0s3jn54khce6mua7l';
@@ -344,6 +347,30 @@ templ golfRoundContent(params GolfRoundPageParams) {
 				function b32chk(h,d){var v=b32hrp(h).concat(d).concat([0,0,0,0,0,0]);var m=b32poly(v)^1;var r=[];for(var i=0;i<6;i++)r.push((m>>(5*(5-i)))&31);return r;}
 				function cvtBits(d,f,t){var a=0,b=0,r=[];for(var i=0;i<d.length;i++){a=(a<<f)|d[i];b+=f;while(b>=t){b-=t;r.push((a>>b)&((1<<t)-1));}}if(b>0)r.push((a<<(t-b))&((1<<t)-1));return r;}
 				function hexToNpub(hex){var bytes=[];for(var i=0;i<hex.length;i+=2)bytes.push(parseInt(hex.slice(i,i+2),16));var w=cvtBits(bytes,8,5);return 'npub1'+w.concat(b32chk('npub',w)).map(function(v){return B32[v];}).join('');}
+
+				// --- Fetch kind 0 profile ---
+				function fetchProfile(pk) {
+					return new Promise(function(resolve) {
+						var ws = new WebSocket(RELAY);
+						var result = null;
+						var timer = setTimeout(function(){ws.close();resolve(result);}, 5000);
+						ws.onopen = function() {
+							ws.send(JSON.stringify(['REQ','prof',{kinds:[0],authors:[pk],limit:1}]));
+						};
+						ws.onmessage = function(msg) {
+							try {
+								var data = JSON.parse(msg.data);
+								if (data[0] === 'EVENT' && data[1] === 'prof') {
+									var meta = JSON.parse(data[2].content);
+									result = {name: meta.name || meta.display_name || '', picture: meta.picture || ''};
+								} else if (data[0] === 'EOSE') {
+									clearTimeout(timer); ws.close(); resolve(result);
+								}
+							} catch(e) {}
+						};
+						ws.onerror = function() { clearTimeout(timer); resolve(result); };
+					});
+				}
 
 				// --- Connect ---
 				window.connectNostrComment = async function() {
@@ -360,15 +387,29 @@ templ golfRoundContent(params GolfRoundPageParams) {
 						btn.disabled = true;
 						_pubkeyHex = await signer.getPublicKey();
 						_npub = hexToNpub(_pubkeyHex);
-						// Update button to show connected state
+						// Show compose box immediately with npub fallback
+						var shortName = _npub.slice(0,10) + '...' + _npub.slice(-4);
 						btn.classList.remove('bg-gray-800','hover:bg-gray-700');
 						btn.classList.add('bg-green-800','cursor-default');
-						txt.textContent = _npub.slice(0,10) + '...' + _npub.slice(-4);
-						// Show compose box
+						txt.textContent = shortName;
 						document.getElementById('comment-compose').classList.remove('hidden');
 						document.getElementById('comment-input').addEventListener('input', function() {
 							document.getElementById('comment-send-btn').disabled = !this.value.trim();
 						});
+						// Fetch profile in background for display name + avatar
+						var profile = await fetchProfile(_pubkeyHex);
+						if (profile) {
+							if (profile.name) {
+								_displayName = profile.name;
+								txt.textContent = profile.name;
+							}
+							if (profile.picture) {
+								_picture = profile.picture;
+								var avatar = document.getElementById('compose-avatar');
+								avatar.src = profile.picture;
+								avatar.classList.remove('hidden');
+							}
+						}
 					} catch(e) {
 						btn.disabled = false;
 						txt.textContent = 'Cancelled';
@@ -395,7 +436,7 @@ templ golfRoundContent(params GolfRoundPageParams) {
 							tags: [
 								['E', EVENT_ID, RELAY, 'root'],
 								['K', '1501'],
-								['p', EVENT_ID],
+								['p', AUTHOR_PK],
 								['type', 'banter']
 							],
 							content: content,
@@ -406,8 +447,8 @@ templ golfRoundContent(params GolfRoundPageParams) {
 						await publishToRelay(signed);
 						// Optimistic render
 						appendComment({
-							picture: '',
-							name: _npub.slice(0,10) + '...' + _npub.slice(-4),
+							picture: _picture || '',
+							name: _displayName || _npub.slice(0,10) + '...' + _npub.slice(-4),
 							content: content,
 							time: 'just now',
 							type: 'banter',
@@ -458,9 +499,12 @@ templ golfRoundContent(params GolfRoundPageParams) {
 					if (noMsg) noMsg.remove();
 					var div = document.createElement('div');
 					div.className = 'px-4 py-3';
+					var avatarHtml = c.picture
+						? '<img src="' + escHtml(c.picture) + '" alt="" class="w-7 h-7 rounded-full flex-shrink-0 mt-0.5"/>'
+						: '<div class="w-7 h-7 rounded-full bg-green-200 flex-shrink-0 mt-0.5"></div>';
 					div.innerHTML =
 						'<div class="flex items-start gap-2.5">' +
-						'<div class="w-7 h-7 rounded-full bg-green-200 flex-shrink-0 mt-0.5"></div>' +
+						avatarHtml +
 						'<div class="flex-1 min-w-0">' +
 						'<div class="flex items-center gap-2">' +
 						'<span class="text-sm font-semibold text-gray-900">' + escHtml(c.name) + '</span>' +
