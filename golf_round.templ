@@ -23,16 +23,20 @@ templ golfRoundTemplate(params GolfRoundPageParams, isEmbed bool) {
 			@golfRoundContent(params)
 		}
 	} else {
-		@eventPageTemplate(
-			"Golf Round",
-			params.OpenGraphParams,
-			params.HeadParams,
-			params.Clients,
-			params.Details,
-			params.Event,
-		) {
-			@golfRoundContent(params)
-		}
+		<html class="theme--default font-light print:text-base">
+			<meta charset="UTF-8"/>
+			<head>
+				<title>Golf Round</title>
+				@openGraphTemplate(params.OpenGraphParams)
+				@headCommonTemplate(params.HeadParams)
+			</head>
+			<body class="mb-16 bg-white text-gray-600 dark:bg-neutral-900 dark:text-neutral-50 print:text-black">
+				@topTemplate(params.HeadParams)
+				<div class="mx-auto w-full max-w-screen-2xl px-4 pb-4">
+					@golfRoundContent(params)
+				</div>
+			</body>
+		</html>
 	}
 }
 
