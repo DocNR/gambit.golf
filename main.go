@@ -147,6 +147,14 @@ func main() {
 	mux.HandleFunc("/njump/image/", renderImage)
 	mux.HandleFunc("/njump/proxy/", proxy)
 	mux.HandleFunc("/robots.txt", renderRobots)
+	mux.HandleFunc("/.well-known/apple-app-site-association", func(w http.ResponseWriter, r *http.Request) {
+		w.Header().Set("Content-Type", "application/json")
+		http.ServeFileFS(w, r, static, "static/.well-known/apple-app-site-association")
+	})
+	mux.HandleFunc("/.well-known/nostr.json", func(w http.ResponseWriter, r *http.Request) {
+		w.Header().Set("Content-Type", "application/json")
+		http.ServeFileFS(w, r, static, "static/.well-known/nostr.json")
+	})
 	mux.HandleFunc("/r/", renderRelayPage)
 	mux.HandleFunc("/random", redirectToRandom)
 	mux.HandleFunc("/e/", redirectFromESlash)

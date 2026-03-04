@@ -1,0 +1,11 @@
+{
+  "applinks": {
+    "apps": [],
+    "details": [
+      {
+        "appID": "TEAMID_PLACEHOLDER.golf.raid.app",
+        "paths": ["/round/*"]
+      }
+    ]
+  }
+}
