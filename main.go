@@ -20,12 +20,12 @@ import (
 
 type Settings struct {
 	Port                string   `envconfig:"PORT" default:"2999"`
-	Domain              string   `envconfig:"DOMAIN" default:"njump.me"`
+	Domain              string   `envconfig:"DOMAIN" default:"gambit.golf"`
 	ServiceURL          string   `envconfig:"SERVICE_URL"`
-	InternalDBPath      string   `envconfig:"DISK_CACHE_PATH" default:"/tmp/njump-internal"`
-	EventStorePath      string   `envconfig:"EVENT_STORE_PATH" default:"/tmp/njump-db"`
-	KVStorePath         string   `envconfig:"KV_STORE_PATH" default:"/tmp/njump-kv"`
-	HintsMemoryDumpPath string   `envconfig:"HINTS_SAVE_PATH" default:"/tmp/njump-hints.json"`
+	InternalDBPath      string   `envconfig:"DISK_CACHE_PATH" default:"/tmp/gambit-internal"`
+	EventStorePath      string   `envconfig:"EVENT_STORE_PATH" default:"/tmp/gambit-db"`
+	KVStorePath         string   `envconfig:"KV_STORE_PATH" default:"/tmp/gambit-kv"`
+	HintsMemoryDumpPath string   `envconfig:"HINTS_SAVE_PATH" default:"/tmp/gambit-hints.json"`
 	TailwindDebug       bool     `envconfig:"TAILWIND_DEBUG"`
 	RelayConfigPath     string   `envconfig:"RELAY_CONFIG_PATH"`
 	TrustedPubKeys      []string `envconfig:"TRUSTED_PUBKEYS"`
@@ -138,14 +138,14 @@ func main() {
 
 	// routes
 	mux := relay.Router()
-	mux.Handle("/njump/static/", http.StripPrefix("/njump/", http.FileServer(http.FS(static))))
+	mux.Handle("/static/", http.FileServer(http.FS(static)))
 
 	mux.HandleFunc("/relays-archive.xml", renderArchive)
 	mux.HandleFunc("/npubs-archive.xml", renderArchive)
 	mux.HandleFunc("/npubs-sitemaps.xml", renderSitemapIndex)
 	mux.HandleFunc("/services/oembed", renderOEmbed)
-	mux.HandleFunc("/njump/image/", renderImage)
-	mux.HandleFunc("/njump/proxy/", proxy)
+	mux.HandleFunc("/image/", renderImage)
+	mux.HandleFunc("/proxy/", proxy)
 	mux.HandleFunc("/robots.txt", renderRobots)
 	mux.HandleFunc("/.well-known/apple-app-site-association", func(w http.ResponseWriter, r *http.Request) {
 		w.Header().Set("Content-Type", "application/json")

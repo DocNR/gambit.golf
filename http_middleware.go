@@ -37,13 +37,13 @@ var (
 
 func queueMiddleware(next http.HandlerFunc) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
-		if len(r.URL.Path) <= 30 || strings.HasPrefix(r.URL.Path, "/njump/static") {
+		if len(r.URL.Path) <= 30 || strings.HasPrefix(r.URL.Path, "/static") {
 			next.ServeHTTP(w, r)
 			return
 		}
 
 		willQueue := false
-		for _, prefix := range []string{"/njump", "/nevent1", "/image", "/naddr1", "/npub1", "/nprofile1", "/note1", "/embed"} {
+		for _, prefix := range []string{"/image", "/proxy", "/nevent1", "/naddr1", "/npub1", "/nprofile1", "/note1", "/embed"} {
 			if strings.HasPrefix(r.URL.Path, prefix) {
 				willQueue = true
 				break

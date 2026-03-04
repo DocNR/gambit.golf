@@ -19,7 +19,7 @@ func outboxHintsFileLoaderSaver(ctx context.Context) {
 		file.Close()
 	}
 
-	const tmp = "/tmp/njump-outbox-hints-tmp.json"
+	const tmp = "/tmp/gambit-outbox-hints-tmp.json"
 
 	for {
 		select {

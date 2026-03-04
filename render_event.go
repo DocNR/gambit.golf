@@ -183,7 +183,7 @@ func renderEvent(w http.ResponseWriter, r *http.Request) {
 	textImageURL := ""
 	description := ""
 	if useTextImage {
-		textImageURL = fmt.Sprintf("https://%s/njump/image/%s?%s", host, code, r.URL.RawQuery)
+		textImageURL = fmt.Sprintf("https://%s/image/%s?%s", host, code, r.URL.RawQuery)
 		if data.event.subject != "" {
 			if seenOnRelays != "" {
 				description = fmt.Sprintf("%s -- %s", data.event.subject, seenOnRelays)
@@ -315,7 +315,7 @@ func renderEvent(w http.ResponseWriter, r *http.Request) {
 		Image:        data.image,
 		Video:        data.video,
 		VideoType:    data.videoType,
-		ProxiedImage: "https://" + host + "/njump/proxy?src=" + data.image,
+		ProxiedImage: "https://" + host + "/proxy?src=" + data.image,
 
 		Superscript: data.event.authorLong() + " on Nostr",
 		Subscript:   subscript,
@@ -608,7 +608,7 @@ func renderEvent(w http.ResponseWriter, r *http.Request) {
 
 	case GolfRound:
 		// Generate custom golf scorecard image URL
-		golfImageURL := fmt.Sprintf("https://%s/njump/image/%s", host, code)
+		golfImageURL := fmt.Sprintf("https://%s/image/%s", host, code)
 		opengraph.BigImage = golfImageURL
 
 		if data.event.Kind == 1501 {
