@@ -162,6 +162,11 @@ func main() {
 	mux.HandleFunc("/favicon.ico", redirectToFavicon)
 	mux.HandleFunc("/embed/{code}", renderEmbedjs)
 	mux.HandleFunc("/about", renderAbout)
+	mux.HandleFunc("/round/{code}", func(w http.ResponseWriter, r *http.Request) {
+		// /round/<nevent> is an alias for /<nevent>
+		r.SetPathValue("code", r.PathValue("code"))
+		renderEvent(w, r)
+	})
 	mux.HandleFunc("/{code}", renderEvent)
 	mux.HandleFunc("/{$}", renderLanding)
 
