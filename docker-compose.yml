@@ -7,3 +7,7 @@ services:
       - "127.0.0.1:2999:2999"
     environment:
       - PORT=2999
+      - ASC_WEBHOOK_SECRET=b704ffbc2095acb0727f0a4c650ee007857d5435e8d2ebd24578de29dbd4eefd
+      - ASC_WEBHOOK_SPOOL_DIR=/mnt/ghosttrak-data/fairway-intel/asc-webhook-spool
+    volumes:
+      - /mnt/ghosttrak-data/fairway-intel/asc-webhook-spool:/mnt/ghosttrak-data/fairway-intel/asc-webhook-spool

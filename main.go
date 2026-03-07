@@ -167,6 +167,12 @@ func main() {
 		r.SetPathValue("code", r.PathValue("code"))
 		renderEvent(w, r)
 	})
+	mux.HandleFunc("/tournament/{code}", func(w http.ResponseWriter, r *http.Request) {
+		// /tournament/<naddr> is an alias for /<naddr>
+		r.SetPathValue("code", r.PathValue("code"))
+		renderEvent(w, r)
+	})
+	mux.HandleFunc("/webhooks/asc-feedback", handleASCWebhook)
 	mux.HandleFunc("/{code}", renderEvent)
 	mux.HandleFunc("/{$}", renderLanding)
 
