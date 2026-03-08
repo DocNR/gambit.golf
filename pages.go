@@ -28,6 +28,7 @@ const (
 	GolfRound
 	CourseData
 	LiveScorecard
+	Tournament
 	Other
 )
 

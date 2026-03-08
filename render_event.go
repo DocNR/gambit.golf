@@ -740,6 +740,34 @@ func renderEvent(w http.ResponseWriter, r *http.Request) {
 
 		component = golfLiveScorecardPageTemplate(params, isEmbed)
 
+	case Tournament:
+		meta := data.TournamentMetadata
+		tournamentData := buildTournamentPageData(ctx, data.event.Event, meta, data.naddr)
+
+		opengraph.Superscript = "Tournament"
+		if tournamentData.Title != "" {
+			opengraph.Superscript = tournamentData.Title
+		}
+		if tournamentData.Image != "" {
+			opengraph.BigImage = tournamentData.Image
+		}
+		opengraph.Text = tournamentOGDescription(tournamentData)
+
+		params := GolfTournamentPageParams{
+			BaseEventPageParams: baseEventPageParams,
+			OpenGraphParams:     opengraph,
+			HeadParams: HeadParams{
+				IsProfile:   false,
+				NaddrNaked:  data.naddrNaked,
+				NeventNaked: data.neventNaked,
+			},
+			Details:    detailsData,
+			Tournament: tournamentData,
+			Clients:    generateClientList(data.event.Kind, data.naddr),
+		}
+
+		component = golfTournamentTemplate(params, isEmbed)
+
 	case Other:
 		detailsData.HideDetails = false // always open this since we know nothing else about the event
 

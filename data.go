@@ -44,6 +44,7 @@ type Data struct {
 	Kind1501Metadata         *Kind1501Metadata
 	Kind33501Metadata        *Kind33501Metadata
 	Kind30501Metadata        *Kind30501Metadata
+	TournamentMetadata       *TournamentMetadata
 }
 
 type Kind1501Metadata struct {
@@ -185,7 +186,43 @@ func grabData(ctx context.Context, code string, withRelays bool) (Data, error) {
 	case 1311:
 		data.templateId = LiveEventMessage
 		data.content = event.Content
-	case 31922, 31923:
+	case 31923:
+		data.templateId = Tournament
+		data.content = event.Content
+		tm := &TournamentMetadata{}
+		if titleTag := event.Tags.Find("title"); titleTag != nil {
+			tm.Title = titleTag[1]
+		}
+		if nameTag := event.Tags.Find("name"); nameTag != nil && tm.Title == "" {
+			tm.Title = nameTag[1]
+		}
+		if locTag := event.Tags.Find("location"); locTag != nil {
+			tm.Location = locTag[1]
+		}
+		if startTag := event.Tags.Find("start"); startTag != nil {
+			if ts, err := strconv.ParseInt(startTag[1], 10, 64); err == nil {
+				tm.StartUnix = ts
+			}
+		}
+		if statusTag := event.Tags.Find("status"); statusTag != nil {
+			tm.TournamentStatus = statusTag[1]
+		}
+		if courseTag := event.Tags.Find("course"); courseTag != nil {
+			tm.CourseCoord = courseTag[1]
+		}
+		if teeTag := event.Tags.Find("tee"); teeTag != nil {
+			tm.TeeSet = teeTag[1]
+		}
+		if imgTag := event.Tags.Find("image"); imgTag != nil {
+			tm.Image = imgTag[1]
+		}
+		for _, tag := range event.Tags {
+			if len(tag) >= 2 && tag[0] == "p" {
+				tm.RosterPubkeys = append(tm.RosterPubkeys, tag[1])
+			}
+		}
+		data.TournamentMetadata = tm
+	case 31922:
 		data.templateId = CalendarEvent
 		data.kind31922Or31923Metadata = &Kind31922Or31923Metadata{CalendarEvent: nip52.ParseCalendarEvent(*event)}
 		data.content = event.Content

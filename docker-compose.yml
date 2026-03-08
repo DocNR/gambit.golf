@@ -9,5 +9,6 @@ services:
       - PORT=2999
       - ASC_WEBHOOK_SECRET=b704ffbc2095acb0727f0a4c650ee007857d5435e8d2ebd24578de29dbd4eefd
       - ASC_WEBHOOK_SPOOL_DIR=/mnt/ghosttrak-data/fairway-intel/asc-webhook-spool
+    user: "1000:1000"
     volumes:
       - /mnt/ghosttrak-data/fairway-intel/asc-webhook-spool:/mnt/ghosttrak-data/fairway-intel/asc-webhook-spool

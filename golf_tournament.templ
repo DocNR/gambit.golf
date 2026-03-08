@@ -1,0 +1,177 @@
+package main
+
+import (
+	"strconv"
+)
+
+type GolfTournamentPageParams struct {
+	BaseEventPageParams
+	OpenGraphParams
+	HeadParams
+	Details    DetailsParams
+	Tournament TournamentPageData
+	Clients    []ClientReference
+}
+
+templ golfTournamentTemplate(params GolfTournamentPageParams, isEmbed bool) {
+	<!DOCTYPE html>
+	if isEmbed {
+		@embeddedPageTemplate(
+			params.Event,
+			params.NeventNaked,
+		) {
+			@golfTournamentContent(params)
+		}
+	} else {
+		<html class="theme--default font-light print:text-base">
+			<meta charset="UTF-8"/>
+			<head>
+				<title>{ params.Tournament.Title }</title>
+				if params.Tournament.TournamentStatus == "in_progress" {
+					<meta http-equiv="refresh" content="60"/>
+				}
+				@openGraphTemplate(params.OpenGraphParams)
+				@headCommonTemplate(params.HeadParams)
+			</head>
+			<body class="mb-16 bg-white text-gray-600 dark:bg-neutral-900 dark:text-neutral-50 print:text-black">
+				@topTemplate(params.HeadParams)
+				<div class="mx-auto w-full max-w-screen-2xl px-4 pb-4">
+					@golfTournamentContent(params)
+				</div>
+			</body>
+		</html>
+	}
+}
+
+templ golfTournamentContent(params GolfTournamentPageParams) {
+	<div class="max-w-6xl mx-auto p-4 md:p-6" style="color: #111827;">
+		<!-- Tournament Card -->
+		<div class="bg-white border-2 border-gray-800 rounded-lg shadow-xl overflow-hidden" style="color: #111827;">
+			<!-- Banner Image -->
+			if params.Tournament.Image != "" {
+				<div class="w-full h-48 md:h-64 overflow-hidden">
+					<img src={ params.Tournament.Image } alt="" class="w-full h-full object-cover"/>
+				</div>
+			}
+			<!-- Header -->
+			<div class="bg-gray-100 border-b-2 border-gray-800 p-4">
+				<div class="flex items-center justify-between flex-wrap gap-2">
+					<div class="flex-1 min-w-0">
+						<h1 class="text-xl md:text-2xl font-bold text-gray-900 truncate">
+							if params.Tournament.Title != "" {
+								{ params.Tournament.Title }
+							} else {
+								Tournament
+							}
+						</h1>
+						<div class="flex items-center gap-3 mt-1 text-sm text-gray-600 flex-wrap">
+							if params.Tournament.Location != "" {
+								<span>📍 { params.Tournament.Location }</span>
+							}
+							if params.Tournament.Date != "" {
+								<span>📅 { params.Tournament.Date }</span>
+							}
+							<span>⛳ Par { strconv.Itoa(params.Tournament.CoursePar) }</span>
+							if params.Tournament.TeeSet != "" {
+								<span>{ params.Tournament.TeeSet } tees</span>
+							}
+						</div>
+					</div>
+					<div class="flex-shrink-0">
+						if params.Tournament.TournamentStatus == "in_progress" {
+							<span class={ "inline-flex items-center px-3 py-1 rounded-full text-xs font-bold uppercase tracking-wide " + tournamentStatusBadgeClass(params.Tournament.TournamentStatus) }>
+								<span class="w-2 h-2 bg-white rounded-full mr-1.5 animate-pulse"></span>
+								{ tournamentStatusLabel(params.Tournament.TournamentStatus) }
+							</span>
+						} else {
+							<span class={ "inline-flex items-center px-3 py-1 rounded-full text-xs font-bold uppercase tracking-wide " + tournamentStatusBadgeClass(params.Tournament.TournamentStatus) }>
+								{ tournamentStatusLabel(params.Tournament.TournamentStatus) }
+							</span>
+						}
+					</div>
+				</div>
+			</div>
+
+			<!-- Leaderboard Table -->
+			if len(params.Tournament.Players) > 0 {
+				<div class="p-3 md:p-4">
+					<div class="overflow-x-auto">
+						<table class="w-full border-collapse border-2 border-gray-800 bg-white text-center">
+							<thead>
+								<tr class="bg-gray-200">
+									<th class="border border-gray-800 px-3 py-2 text-xs font-bold text-gray-900 uppercase w-16">Pos</th>
+									<th class="border border-gray-800 px-3 py-2 text-xs font-bold text-gray-900 uppercase text-left" style="min-width: 160px;">Player</th>
+									<th class="border border-gray-800 px-3 py-2 text-xs font-bold text-gray-900 uppercase w-20">Score</th>
+									<th class="border border-gray-800 px-3 py-2 text-xs font-bold text-gray-900 uppercase w-20">Thru</th>
+								</tr>
+							</thead>
+							<tbody>
+								for _, entry := range params.Tournament.Players {
+									<tr class={ leaderboardRowClass(entry) }>
+										<td class="border border-gray-800 px-3 py-2.5 text-sm font-bold font-mono text-gray-900">
+											{ entry.Rank }
+										</td>
+										<td class="border border-gray-800 px-3 py-2.5 text-left">
+											<div class="flex items-center gap-2">
+												if entry.Player.Picture != "" {
+													<img src={ entry.Player.Picture } alt="" class="w-6 h-6 rounded-full flex-shrink-0"/>
+												} else {
+													<div class="w-6 h-6 rounded-full bg-gray-300 flex-shrink-0"></div>
+												}
+												<span class="text-sm font-semibold text-gray-900 truncate">{ entry.Player.DisplayName }</span>
+											</div>
+										</td>
+										<td class={ "border border-gray-800 px-3 py-2.5 text-sm font-bold font-mono " + leaderboardScoreClass(entry) }>
+											{ leaderboardScoreDisplay(entry) }
+										</td>
+										<td class="border border-gray-800 px-3 py-2.5 text-sm font-mono text-gray-700">
+											<div class="flex items-center justify-center gap-1">
+												if entry.IsPlaying {
+													<span class="w-2 h-2 bg-green-500 rounded-full"></span>
+												}
+												{ entry.Thru }
+											</div>
+										</td>
+									</tr>
+								}
+							</tbody>
+						</table>
+					</div>
+				</div>
+			} else {
+				<!-- No players yet -->
+				<div class="p-8 text-center">
+					<p class="text-gray-500 text-lg">
+						if params.Tournament.TournamentStatus == "registration_open" {
+							Registration is open. No players registered yet.
+						} else {
+							No scores available yet.
+						}
+					</p>
+				</div>
+			}
+		</div>
+
+		<!-- App Deep Link -->
+		if params.Tournament.Naddr != "" {
+			<div class="mt-4 p-4 bg-gradient-to-r from-green-50 to-blue-50 rounded-lg border border-green-200">
+				<div class="flex items-center justify-between flex-wrap gap-2">
+					<div>
+						<h3 class="font-semibold text-gray-900">Gambit Golf</h3>
+						<p class="text-sm text-gray-600">View this tournament in the Gambit Golf app</p>
+					</div>
+					<a href={ templ.SafeURL("nostr:" + params.Tournament.Naddr) } class="bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded-lg text-sm font-medium transition-colors">
+						Open in App
+					</a>
+				</div>
+			</div>
+		}
+	</div>
+}
+
+func leaderboardRowClass(e LeaderboardEntry) string {
+	if e.IsDNS {
+		return "bg-gray-50"
+	}
+	return ""
+}

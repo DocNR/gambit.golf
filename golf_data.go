@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"sort"
 	"strconv"
+	"strings"
 	"time"
 
 	"github.com/nbd-wtf/go-nostr"
@@ -325,14 +326,25 @@ func fetchComments(ctx context.Context, initiationEventID string) []CommentData 
 			Type:      "banter",
 		}
 
-		// Check for type tag
+		// Check for tags: pinned, label, type
 		for _, tag := range evt.Tags {
-			if len(tag) >= 2 && tag[0] == "type" {
-				cd.Type = tag[1]
+			if len(tag) >= 2 {
+				switch tag[0] {
+				case "pinned":
+					if tag[1] == "true" {
+						cd.IsPinned = true
+					}
+				case "label":
+					// "Settlement" -> "settlement" for consistency
+					cd.Type = strings.ToLower(tag[1])
+				case "type":
+					// Legacy tag support
+					cd.Type = tag[1]
+				}
 			}
 		}
 
-		// Pin settlement/summary from the bot
+		// Also pin settlement/summary by type (fallback for old events)
 		if cd.Type == "settlement" || cd.Type == "summary" {
 			cd.IsPinned = true
 		}
