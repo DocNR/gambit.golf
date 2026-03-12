@@ -367,33 +367,33 @@ func drawGolfScorecardImage(
 	
 	img := gg.NewContext(width, height)
 	
-	// Golf-themed gradient background (teal to lighter teal - matching Noga's color scheme)
-	gradient := gg.NewLinearGradient(0, 0, 0, float64(height))
-	gradient.AddColorStop(0, color.RGBA{27, 138, 156, 255})   // Noga Primary: #1B8A9C
-	gradient.AddColorStop(1, color.RGBA{77, 182, 172, 255})   // Noga Primary Light: #4DB6AC
-	img.SetFillStyle(gradient)
+	// Gambit Golf brand: dark background (#030712) with emerald green accent (#10B981)
+	img.SetColor(color.RGBA{3, 7, 18, 255}) // brandBackground: #030712 (gray-950)
 	img.DrawRectangle(0, 0, float64(width), float64(height))
 	img.Fill()
-	
-	// White scorecard container
+
+	// Subtle emerald gradient overlay at top
+	topGlow := gg.NewLinearGradient(0, 0, 0, float64(height)/2)
+	topGlow.AddColorStop(0, color.RGBA{16, 185, 129, 20})  // emerald-500 at low opacity
+	topGlow.AddColorStop(1, color.RGBA{16, 185, 129, 0})
+	img.SetFillStyle(topGlow)
+	img.DrawRectangle(0, 0, float64(width), float64(height)/2)
+	img.Fill()
+
+	// Dark card container (slightly lighter than bg)
 	cardMargin := 60.0
 	cardWidth := float64(width) - (cardMargin * 2)
 	cardHeight := float64(height) - (cardMargin * 2)
 	cardX := cardMargin
 	cardY := cardMargin
-	
-	img.SetColor(color.White)
+
+	img.SetColor(color.RGBA{15, 23, 42, 255}) // slate-900 #0F172A
 	img.DrawRoundedRectangle(cardX, cardY, cardWidth, cardHeight, 20)
 	img.Fill()
-	
-	// Add subtle shadow
-	img.SetRGBA255(0, 0, 0, 30)
-	img.DrawRoundedRectangle(cardX+5, cardY+5, cardWidth, cardHeight, 20)
-	img.Fill()
-	
-	// Draw white card again on top
-	img.SetColor(color.White)
-	img.DrawRoundedRectangle(cardX, cardY, cardWidth, cardHeight, 20)
+
+	// Emerald top border accent on card
+	img.SetColor(color.RGBA{16, 185, 129, 255}) // brandPrimary: #10B981
+	img.DrawRoundedRectangle(cardX, cardY, cardWidth, 6, 3)
 	img.Fill()
 	
 	// Set up fonts
@@ -423,14 +423,14 @@ func drawGolfScorecardImage(
 	
 	// Title
 	img.SetFontFace(titleFont)
-	img.SetColor(color.RGBA{27, 138, 156, 255}) // Noga Primary: #1B8A9C
+	img.SetColor(color.RGBA{16, 185, 129, 255}) // brandPrimary: #10B981
 	titleText := "Golf Scorecard"
 	titleWidth, _ := img.MeasureString(titleText)
 	img.DrawString(titleText, (float64(width)-titleWidth)/2, cardY+80)
 	
 	// Course name
 	img.SetFontFace(courseFont)
-	img.SetColor(color.RGBA{31, 41, 55, 255}) // Gray-800
+	img.SetColor(color.RGBA{226, 232, 240, 255}) // slate-200 #E2E8F0
 	courseName := golfData.CourseName
 	if courseName == "" {
 		courseName = "Golf Course"
@@ -454,21 +454,21 @@ func drawGolfScorecardImage(
 	combinedScoreText := fmt.Sprintf("%d (%s)", golfData.TotalScore, parText)
 	combinedScoreWidth, _ := img.MeasureString(combinedScoreText)
 	
-	// Score color based on par (using Noga's golf colors)
+	// Score color based on par (Gambit brand colors)
 	if golfData.ScoreToPar < 0 {
-		img.SetColor(color.RGBA{76, 175, 80, 255}) // Noga Birdie: #4CAF50
+		img.SetColor(color.RGBA{16, 185, 129, 255}) // brandPrimary emerald: #10B981
 	} else if golfData.ScoreToPar > 0 {
-		img.SetColor(color.RGBA{244, 67, 54, 255}) // Noga Double Bogey: #F44336
+		img.SetColor(color.RGBA{239, 68, 68, 255}) // red-500: #EF4444
 	} else {
-		img.SetColor(color.RGBA{30, 136, 229, 255}) // Noga Eagle: #1E88E5
+		img.SetColor(color.RGBA{110, 231, 183, 255}) // brandMuted emerald-300: #6EE7B7
 	}
 	
 	img.DrawString(combinedScoreText, (float64(width)-combinedScoreWidth)/2, cardY+250)
 	
 	// Player and date info
 	img.SetFontFace(detailFont)
-	img.SetColor(color.RGBA{107, 114, 128, 255}) // Gray-500
-	
+	img.SetColor(color.RGBA{148, 163, 184, 255}) // slate-400 #94A3B8
+
 	playerText := fmt.Sprintf("Player: %s", metadata.ShortName())
 	img.DrawString(playerText, cardX+40, cardY+380)
 	
@@ -483,8 +483,8 @@ func drawGolfScorecardImage(
 		img.DrawString(parInfoText, cardX+40, cardY+460)
 	}
 	
-	// NOGA branding (positioned within card boundaries)
-	img.SetColor(color.RGBA{27, 138, 156, 255}) // Noga Primary: #1B8A9C
+	// Gambit branding (positioned within card boundaries)
+	img.SetColor(color.RGBA{16, 185, 129, 255}) // brandPrimary: #10B981
 	brandText := "gambit.golf"
 	brandWidth, _ := img.MeasureString(brandText)
 	img.DrawString(brandText, cardX+cardWidth-brandWidth-40, cardY+cardHeight-40)
